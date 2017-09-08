@@ -110,6 +110,7 @@ void Sound::PollTurnOnOrOffMusic() {
 		(key[KEY_RCONTROL] && key[KEY_M])) {
 		setVolume(_volume == 0 ? 128 : 0);
 		updateSound(_bgm);
+		rest(150);
 	}
 }
 

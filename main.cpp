@@ -1,63 +1,181 @@
 #include <stdio.h>
-#include <allegro.h>
 #include "assignment2.h"
-#include "sound.h"
-#include "sprite.h"
-#include "spritehandler.h"
 
 volatile int ticks;
 volatile int framerate;
 bool gameOver;
-
+int lineLength = 200;
 //calculate framerate every second
 void timer1(void)
 {
     framerate = ticks;
     ticks=0;
 }
-END_OF_FUNCTION(timer1)
+END_OF_FUNCTION(timer1);
 
-void displayGameOverScreen() {
-	rectfill(screen, 0, 0, WIDTH, HEIGHT, BLACK);
-	textprintf_centre_ex(screen, font, WIDTH / 2, HEIGHT / 2, WHITE, -1, "Game Over");
-	textprintf_centre_ex(screen, font, WIDTH / 2, HEIGHT / 2 + 30, WHITE, -1, "Press Space To Retry or ESC to Exit");
+/*
+	Draws a fullscreen image given the filename input. Generally used to display a background image
+*/
+void drawImage(const char * filename) {
+	BITMAP *image;
+	image = load_bitmap(filename, NULL);
+	if (!image) {
+		allegro_message("Error Loading %s", filename);
+	}
+	
+	blit(image, screen, 0, 0, 0, 0, WIDTH, HEIGHT);
+	destroy_bitmap(image);
 }
 
-bool chooseToContinue() {
+// Title Screen
+void displayTitleScreen() {
+	// Replace the title with a blit to the screen with a better title
+	//drawImage(TITLE_IMAGE);
+	while (!key[KEY_SPACE]);
+	rectfill(screen, 0, 0, WIDTH, HEIGHT, BLACK);
+}
+// Instructions/Controls Screen
+/*
+	Draws the instructions screen
+*/
+void displayInstructions() {
+	int xOffset = WIDTH / 2;
+	int yOffset = HEIGHT / 4;
+	
+	//drawImage(INSTRUCTIONS_IMAGE);
+	draw_pretty_box("If you miss or the cursor passes the target, you lose the game!", 70, yOffset, 10, 30, 21);	
+	textout_centre_ex(screen, font, "Instructions", xOffset, yOffset, WHITE, 0);
+	textout_centre_ex(screen, font, "Select the options on the following screens", xOffset, yOffset + 2 * LINE_SPACING, WHITE, 0);
+	textout_centre_ex(screen, font, "by pressing the colored keys on the screen.", xOffset, yOffset + 3 * LINE_SPACING, WHITE, 0);
+	
+	textout_centre_ex(screen, font, "A cursor moves on the screen and your goal is", xOffset, yOffset + 5 * LINE_SPACING, WHITE, 0);
+	textout_centre_ex(screen, font, "to press SPACE when the cursor touches the target!", xOffset, yOffset + 6 * LINE_SPACING, WHITE, 0);
+	
+	textout_centre_ex(screen, font, "There are 5 levels in total. Everytime you hit the", xOffset, yOffset + 8 * LINE_SPACING, WHITE, 0);
+	textout_centre_ex(screen, font, "the target, your score increases and the cursor", xOffset, yOffset + 9 * LINE_SPACING, WHITE, 0);
+	textout_centre_ex(screen, font, "will move in the opposite direction.", xOffset, yOffset + 10 * LINE_SPACING, WHITE, 0);
+	textout_centre_ex(screen, font, "Every 5 times the target is hit, the cursor will speed up!", xOffset, yOffset + 11 * LINE_SPACING, WHITE, 0);
+	textout_centre_ex(screen, font, "If you miss or the cursor passes the target, you lose the game!", xOffset, yOffset + 12 * LINE_SPACING, WHITE, 0);
+		
+	textout_centre_ex(screen, font, "That's all there is to this game! Enjoy!", xOffset, yOffset + 14 * LINE_SPACING, WHITE, 0);
+	
+	textout_centre_ex(screen, font, "Press ENTER to Continue", xOffset, yOffset + 20 * LINE_SPACING, WHITE, 0);
+	
+	while (!key[KEY_ENTER]);
+	rectfill(screen, 0, 0, WIDTH, HEIGHT, BLACK);
+	rest(100);
+}
+
+// Level Selection Screen
+// Cursor Selection Screen
+// Target Selection Screen
+// Congratulations Screen
+
+void displayGameOverScreen(PlayerInfo *player) {
+	rectfill(screen, 0, 0, WIDTH, HEIGHT, BLACK);
+	draw_pretty_box("", WIDTH / 8, HEIGHT / 2, 30, 30, 8);
+	textprintf_centre_ex(screen, font, WIDTH / 2, HEIGHT / 2, WHITE, -1, "Game Over");
+	textprintf_centre_ex(screen, font, WIDTH / 2, HEIGHT / 2 + 3 * LINE_SPACING, WHITE, -1, "Your Score: %i", player->getScore());
+	textprintf_centre_ex(screen, font, WIDTH / 2, HEIGHT / 2 + 4.5 * LINE_SPACING, WHITE, -1, "Highest Score: %i", player->getHighestScore());
+	textprintf_centre_ex(screen, font, WIDTH / 2, HEIGHT / 2 + 7 * LINE_SPACING, WHITE, -1, "Press Enter To Retry or ESC to Exit");
+}
+
+/*
+	Function to display the title of the game, the type of quiz the user selected, and the user's score.
+*/
+void displayUserInformation(PlayerInfo *player, BITMAP *buffer) {
+	int xOffset = WIDTH / 2;
+	int yOffset = 5;
+	rectfill(buffer, 0, 0, WIDTH, yOffset + 10, BLACK);
+	textprintf_centre_ex(buffer, font, xOffset, yOffset, WHITE, 0, "Level: %i | Score: %i", player->getLevel(), player->getScore());
+	hline(buffer, 0, yOffset + 10, WIDTH, WHITE);
+}
+
+/*
+	Get the number of characters in the inputted text
+*/
+int getHorizontalSpacing(const char *text) {
+	return text_length(font, text) / CHARACTER_WIDTH;
+}
+
+/*
+	Draw a box based on the text length and number of lines
+*/
+void draw_pretty_box(const char * textToMeasure, int x, int y, int offset_x, int offset_y, int numLines) {
+	int textLength = getHorizontalSpacing(textToMeasure) * CHARACTER_WIDTH;
+	printf("textLength: %i\n", textLength);
+	rectfill(screen, x - offset_x, y - offset_y, x + textLength + offset_x, y + (numLines * LINE_SPACING) + offset_y, BLACK);
+	rect(screen, x - offset_x, y - offset_y, x + textLength + offset_x, y + (numLines * LINE_SPACING) + offset_y, WHITE);
+}
+
+bool chooseToContinue(Sound *music) {
 	while(1) {
+		music->PollTurnOnOrOffMusic();
 		if (key[KEY_ESC]) {
 			return false;
 		}
-		if (key[KEY_SPACE]) {
+		if (key[KEY_ENTER]) {
 			return true;
 		}
 	}
 }
 
-void level1(Sprite *cursor) {
+void easy(Sprite *cursor) {
+	lineLength = 500;
 	cursor->setXDelay(10);
+	cursor->setYDelay(0);
+	cursor->setVelX(3.0);
+	cursor->setVelY(0);
+}
+
+void medium(Sprite *cursor) {
+	lineLength = 350;
+	cursor->setXDelay(8);
 	cursor->setYDelay(0);
 	cursor->setVelX(5.0);
 	cursor->setVelY(0);
 }
 
+void hard(Sprite *cursor) {
+	lineLength = 250;
+	cursor->setXDelay(8);
+	cursor->setYDelay(0);
+	cursor->setVelX(8.0);
+	cursor->setVelY(0);
+}
+
 void checkCursorOnBoundary(Sprite *cursor) {
-	if (cursor->getX() > WIDTH / 2 + LINELENGTH - cursor->getWidth() / 2) {
-			cursor->setX(WIDTH / 2 + LINELENGTH - cursor->getWidth() / 2);
+	if (cursor->getX() > (WIDTH + lineLength - cursor->getWidth()) / 2) {
+			cursor->setX((WIDTH + lineLength - cursor->getWidth()) / 2);
 			cursor->setDirection(-1);
 		}
-	if (cursor->getX() < WIDTH / 2 - LINELENGTH - cursor->getWidth() / 2) {
-		cursor->setX(WIDTH / 2 - LINELENGTH - cursor->getWidth() / 2);
+	if (cursor->getX() < (WIDTH - lineLength - cursor->getWidth()) / 2) {
+		cursor->setX((WIDTH - lineLength - cursor->getWidth()) / 2);
 		cursor->setDirection(1);
 	}
 }
 
-void hitTheTarget(Sprite *cursor, Sprite *target) {
+void hitTheTarget(Sprite *cursor, Sprite *target, PlayerInfo *player) {
+	rest(10);
+	int edgeOffsetFactor = 5;
 	if (target->PointInside(cursor->CenterX(), cursor->CenterY())) {
 		printf("COLLIDED");
-		int randomLocation = (WIDTH - LINELENGTH) / 2 + rand() % (LINELENGTH + 1);
+		// Subtract half the target width and a small factor so the target doesn't appear on the end of the line,
+		// Since the detection for losing the game is based on the right/left edge of the target
+		int randomLocation = (WIDTH - lineLength + target->getWidth()) / 2 + rand() % (lineLength - 2 * target->getWidth());
 		target->setX(randomLocation);
+		// Ensure the new target position is not overlapping with the cursor
+		// Add some buffer space amount to this --------------
+		while (cursor->Collided(target, 0)) {
+			randomLocation = (WIDTH - lineLength + target->getWidth()) / 2 + rand() % (lineLength  - 2 * target->getWidth());
+			target->setX(randomLocation);
+		}
+		target->setX(randomLocation);
+		
 		cursor->ChangeDirection();
+		player->IncreaseScore(cursor);
+
+		setTargetSides(cursor, target);
 	}
 	else {
 		printf("GAMEOVER");
@@ -65,11 +183,35 @@ void hitTheTarget(Sprite *cursor, Sprite *target) {
 	}
 }
 
-// Depending on the randomLocation placement of the target in respect to the current location of the cursor,
-// this can be used to determine which side of the target the cursor has to pass in order to determine that
-// the player has lost.
-// If the target spawns to the right of the cursor, check for the cursor passing the right side of the target
-// If the target spawns to the left of the cursor, check for the cursor passing the left side of the target
+void setTargetSides(Sprite *cursor, Sprite *target) {
+	// Depending on the randomLocation placement of the target in respect to the current location of the cursor,
+	// this can be used to determine which side of the target the cursor has to pass in order to determine that
+	// the player has lost.
+	// If the target spawns to the right of the cursor, check for the cursor passing the right side of the target
+	if (cursor->CenterX() < target->CenterX()) {
+			target->setLeftOrRightSide(target->getX() + target->getWidth());
+			target->setPassLeftSideToLose(false);
+	}
+	// If the target spawns to the left of the cursor, check for the cursor passing the left side of the target
+	else {
+		target->setLeftOrRightSide(target->getX());
+		target->setPassLeftSideToLose(true);
+	}
+}
+
+void checkIfCursorPassesTarget(Sprite *cursor, Sprite * target) {
+	if (target->getPassLeftSideToLose()) {
+		if (cursor->CenterX() < target->getLeftOrRightSide()) {
+			gameOver = true;
+		}	
+	}
+	else {
+		if (cursor->CenterX() > target->getLeftOrRightSide()) {
+			gameOver = true;
+		}
+	}
+	
+}
 
 int main(void) {
 	allegro_init();
@@ -91,45 +233,50 @@ int main(void) {
 	
 	// Incorrect
 	ticks++;
-	rest(15);
+	rest(5);
 	
+	PlayerInfo *player = new PlayerInfo();
 	Sound *hardlineSounds = new Sound();
 	Sprite *cursor = new Sprite();
-	cursor->Load("sprites/target.bmp");
-	cursor->setX(WIDTH / 2 - cursor->getWidth());
-	cursor->setY(HEIGHT / 2);
-	Sprite *cursor2 = new Sprite();
-	cursor2->Load("sprites/target.bmp");
-	cursor2->setX(WIDTH / 2);
-	cursor2->setY(HEIGHT / 2  - cursor->getHeight() / 2);
+	Sprite *target = new Sprite();
+	cursor->Load("sprites/cursor.bmp");
+	target->Load("sprites/target.bmp");
+	easy(cursor);
+	cursor->setX((WIDTH - lineLength) / 2);
+	cursor->setY(HEIGHT / 2);            
+	target->setX((WIDTH + lineLength) / 2 - 2 * target->getWidth());
+	target->setY(HEIGHT / 2  - target->getHeight() / 2);
 	BITMAP *buffer;
 	buffer = create_bitmap(WIDTH, HEIGHT);
-	level1(cursor);
-
+	setTargetSides(cursor, target);
+	displayInstructions();
+	
 	while (!key[KEY_ESC]) {
 		cursor->UpdatePosition();
 		checkCursorOnBoundary(cursor);
+		checkIfCursorPassesTarget(cursor, target);
 		if (key[KEY_SPACE]) {
-			hitTheTarget(cursor, cursor2);
+			hitTheTarget(cursor, target, player);
 		}
 		//printf("x: %f, y: %f\n", cursor->getX(), cursor->getY());
 		rectfill(buffer, 0, 0, WIDTH, HEIGHT, BLACK);
-		hline(buffer, WIDTH / 2 - LINELENGTH, HEIGHT / 2, WIDTH / 2 + LINELENGTH, WHITE);
-		draw_sprite(buffer, cursor2->getImage(), cursor2->getX(), cursor2->getY());
+		displayUserInformation(player, buffer);
+		hline(buffer, (WIDTH - lineLength) / 2, HEIGHT / 2, (WIDTH + lineLength) / 2, WHITE);
+		draw_sprite(buffer, target->getImage(), target->getX(), target->getY());
 		
-		//hline(screen, WIDTH / 2 - lineLength, HEIGHT / 2, WIDTH / 2 + lineLength, WHITE);
 		draw_sprite(buffer, cursor->getImage(), cursor->getX(), cursor->getY());
-		
+		//textprintf_ex(buffer, font, 0, 0, WHITE, -1, "Frames: %i", framerate);
 		acquire_screen();
 		blit(buffer, screen, 0, 0, 0, 0, WIDTH - 1, HEIGHT - 1);
 		release_screen();
-//        cursor->Collided()
+
 		hardlineSounds->PollTurnOnOrOffMusic();
 		if (gameOver) {
 			displayGameOverScreen();
-			if (chooseToContinue()) {
+			if (chooseToContinue(hardlineSounds)) {
 				// Restore game to default (bring user to starting screen)
 				gameOver = false;
+				setTargetSides(cursor, target);
 				continue;
 			}
 			else {

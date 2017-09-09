@@ -2,8 +2,7 @@
 
 Sprite::Sprite() {
 	_alive = 1;
-	_state = 0;
-	_objectType = 0;
+	_leftOrRightSide = 0;
 	_direction = 1;
 	_animDir = 1;
 	_animColumns = 0;
@@ -27,6 +26,8 @@ Sprite::Sprite() {
 	_speed = 0.0;
 	_velX = 0.0;
 	_velY = 0.0;
+	
+	_passLeftSideToLose = false;
 
 	_image = NULL;
 }
@@ -123,23 +124,21 @@ double Sprite::CenterY() {
 	return _y + (_height / 2);
 }
 
+void Sprite::IncreaseSpeed() {
+	_velX += 1.0;
+}
+
 int Sprite::getAlive() {
 	return _alive;
 }
 void Sprite::setAlive(int alive){
 	_alive = alive;
 }
-int Sprite::getState(){
-	return _state;
+int Sprite::getLeftOrRightSide(){
+	return _leftOrRightSide;
 }
-void Sprite::setState(int state){
-	_state = state;
-}
-int Sprite::getObjectType(){
-	return _objectType;
-}
-void Sprite::setObjectType(int objectType){
-	_objectType = objectType;
+void Sprite::setLeftOrRightSide(int leftOrRightSide){
+	_leftOrRightSide = leftOrRightSide;
 }
 int Sprite::getDirection(){
 	return _direction;
@@ -243,7 +242,6 @@ int Sprite::getMoveAngle(){
 void Sprite::setMoveAngle(int moveAngle){
 	_moveAngle = moveAngle;
 }
-
 double Sprite::getX(){
 	return _x;
 }
@@ -273,6 +271,12 @@ double Sprite::getVelY(){
 }
 void Sprite::setVelY(double velY){
 	_velY = velY;
+}
+bool Sprite::getPassLeftSideToLose() {
+	return _passLeftSideToLose;
+}
+void Sprite::setPassLeftSideToLose(bool passLeftSideToLose) {
+	_passLeftSideToLose = passLeftSideToLose;
 }
 BITMAP *Sprite::getImage(){
 	return _image;

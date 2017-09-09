@@ -6,8 +6,7 @@
 class Sprite {
 	private:
 		int _alive;
-		int _state;
-		int _objectType;
+		int _leftOrRightSide;
 		int _direction;
 		int _animDir;
 		int _animColumns;
@@ -22,6 +21,8 @@ class Sprite {
 		double _x, _y;
 		double _speed;
 		double _velX, _velY;
+
+		bool _passLeftSideToLose;
 
 		BITMAP *_image;
 	public:
@@ -39,13 +40,12 @@ class Sprite {
 		double CenterX();
 		double CenterY();
 		void ChangeDirection();
+		void IncreaseSpeed();
 		
 		int getAlive();
 		void setAlive(int alive);
-		int getState();
-		void setState(int state);
-		int getObjectType();
-		void setObjectType(int objectType);
+		int getLeftOrRightSide();
+		void setLeftOrRightSide(int leftOrRightSide);
 		int getDirection();
 		void setDirection(int direction);
 		int getAnimDir();
@@ -91,6 +91,9 @@ class Sprite {
 		void setVelX(double velX);
 		double getVelY();
 		void setVelY(double velY);
+		
+		bool getPassLeftSideToLose();
+		void setPassLeftSideToLose(bool passLeftSideToLose);
 
 		BITMAP *getImage();
 		void setImage(BITMAP *image);

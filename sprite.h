@@ -36,6 +36,9 @@ class Sprite {
 		int Inside(int x,int y,int left,int top,int right,int bottom);
 		int PointInside(int px,int py);
 		int Collided(Sprite *other = NULL, int shrink = 5);
+		double CenterX();
+		double CenterY();
+		void ChangeDirection();
 		
 		int getAlive();
 		void setAlive(int alive);

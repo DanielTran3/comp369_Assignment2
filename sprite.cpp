@@ -4,7 +4,7 @@ Sprite::Sprite() {
 	_alive = 1;
 	_state = 0;
 	_objectType = 0;
-	_direction = 0;
+	_direction = 1;
 	_animDir = 1;
 	_animColumns = 0;
 	_width = 0;
@@ -57,15 +57,17 @@ void Sprite::DrawFrame(BITMAP *dest) {
 	masked_blit(_image, dest, frameX, frameY, (int) _x, (int) _y, _width, _height); 
 }
 
+
 void Sprite::UpdatePosition() {
+	
 	if (++_xCount > _xDelay) {
 		_xCount = 0;
-		_x += _velX;
+		_x += _direction * _velX;
 	}
 	
 	if (++_yCount > _yDelay) {
 		_yCount = 0;
-		_y += _velY;
+		_y += _direction * _velY;
 	}
 }
 
@@ -107,6 +109,18 @@ int Sprite::Collided(Sprite *other, int shrink) {
 	else {
 		return 0;
 	}
+}
+
+void Sprite::ChangeDirection() {
+	_direction = _direction == -1 ? 1 : -1;
+}
+
+double Sprite::CenterX() {
+	return _x + (_width / 2);
+}
+
+double Sprite::CenterY() {
+	return _y + (_height / 2);
 }
 
 int Sprite::getAlive() {

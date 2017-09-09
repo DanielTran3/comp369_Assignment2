@@ -10,6 +10,8 @@
 #define CHARACTER_WIDTH 8
 #define LINE_SPACING 10
 
+#define LINELENGTH 200
+
 #define WHITE makecol(255, 255, 255)
 #define BLACK makecol(0, 0, 0)
 #define LIGHT_GREEN makecol(100, 255, 0)

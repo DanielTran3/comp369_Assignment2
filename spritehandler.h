@@ -13,4 +13,6 @@ class SpriteHandler {
 		void Create();
 		Sprite *Get(int index);
 		int Size();
+		Sprite *GetCursor();
+		Sprite *GetTarget();
 };

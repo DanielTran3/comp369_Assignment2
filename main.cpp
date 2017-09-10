@@ -5,6 +5,7 @@ volatile int ticks;
 volatile int framerate;
 bool gameOver;
 int lineLength = 200;
+BITMAP *sonicFrames[4];
 //calculate framerate every second
 void timer1(void)
 {
@@ -31,8 +32,51 @@ void drawImage(const char * filename) {
 void displayTitleScreen() {
 	// Replace the title with a blit to the screen with a better title
 	//drawImage(TITLE_IMAGE);
-	while (!key[KEY_SPACE]);
-	rectfill(screen, 0, 0, WIDTH, HEIGHT, BLACK);
+	FONT *titleFont = load_font("fonts/Letter_Gothic_Std.pcx", NULL, NULL);
+	FONT *titleFont_sm = load_font("fonts/Letter_Gothic_Std_Small.pcx", NULL, NULL);
+	if (!titleFont || !titleFont_sm) {
+		allegro_message("Cannot find fonts/title_font.pcx file\n");
+	}
+	else {
+		BITMAP *buffer;
+		buffer = create_bitmap(WIDTH, HEIGHT);
+		int counter = 200;
+		int pointer = 0;
+		char title[9] = "HARDLINE";
+	int title_pos[8] = {200, 230, 260, 290, 320, 350, 380, 410};
+		for (int i = 0; i < HEIGHT; i++) {
+			rectfill(buffer, 0, 0, WIDTH, HEIGHT, BLACK);
+			if (i < title_pos[pointer]) {
+				for (int k = pointer; k < strlen(title); k++) {
+					textprintf_ex(buffer, titleFont, i, 0, WHITE, -1, "%c", title[k]);				
+				}	
+			}
+			else {
+				if (pointer < strlen(title)) {
+					counter += 30;
+					pointer++;					
+				}
+			}
+			for (int j = 0; j < pointer; j++) {
+				textprintf_ex(buffer, titleFont, title_pos[j], 0, WHITE, -1, "%c", title[j]);				
+			}
+			acquire_screen();
+			blit(buffer, screen, 0, 0, 0, 0, WIDTH - 1, HEIGHT - 1);
+			release_screen();
+		}
+		for (int i = 210; i < 450; i++) {
+			hline(buffer, 200, 75, i, WHITE);
+			hline(buffer, 200, 76, i, WHITE);
+			hline(buffer, 200, 77, i, WHITE);
+			hline(buffer, 200, 78, i, WHITE);
+			acquire_screen();
+			blit(buffer, screen, 0, 0, 0, 0, WIDTH - 1, HEIGHT - 1);
+			release_screen();
+		}
+		textprintf_centre_ex(screen, titleFont_sm, WIDTH / 2, HEIGHT / 2 + 5 * LINE_SPACING, WHITE, -1, "Press SPACE to Start");
+		while (!key[KEY_SPACE]);
+		destroy_bitmap(buffer);
+	}
 }
 // Instructions/Controls Screen
 /*
@@ -73,7 +117,7 @@ void displayInstructions() {
 
 void displayGameOverScreen(PlayerInfo *player) {
 	rectfill(screen, 0, 0, WIDTH, HEIGHT, BLACK);
-	draw_pretty_box("", WIDTH / 8, HEIGHT / 2, 30, 30, 8);
+	draw_pretty_box("Highest Score: --", WIDTH / 8, HEIGHT / 2, 30, 30, 8);
 	textprintf_centre_ex(screen, font, WIDTH / 2, HEIGHT / 2, WHITE, -1, "Game Over");
 	textprintf_centre_ex(screen, font, WIDTH / 2, HEIGHT / 2 + 3 * LINE_SPACING, WHITE, -1, "Your Score: %i", player->getScore());
 	textprintf_centre_ex(screen, font, WIDTH / 2, HEIGHT / 2 + 4.5 * LINE_SPACING, WHITE, -1, "Highest Score: %i", player->getHighestScore());
@@ -156,7 +200,7 @@ void checkCursorOnBoundary(Sprite *cursor) {
 }
 
 void hitTheTarget(Sprite *cursor, Sprite *target, PlayerInfo *player) {
-	rest(10);
+	//rest(10);
 	int edgeOffsetFactor = 5;
 	if (target->PointInside(cursor->CenterX(), cursor->CenterY())) {
 		printf("COLLIDED");
@@ -213,6 +257,50 @@ void checkIfCursorPassesTarget(Sprite *cursor, Sprite * target) {
 	
 }
 
+//reuse our friendly tile grabber from chapter 9
+BITMAP *grabframe(BITMAP *source, 
+                  int width, int height, 
+                  int startx, int starty, 
+                  int columns, int frame)
+{
+    BITMAP *temp = create_bitmap(width,height);
+
+    int x = startx + (frame % columns) * width;
+    int y = starty + (frame / columns) * height;
+
+    blit(source,temp,x,y,0,0,width,height);
+
+    return temp;
+}
+
+Sprite *createSonicAnimSprite() {
+	Sprite *tempSprite = new Sprite();
+	temp = load_bitmap("sprites/sonic.bmp", NULL);
+    for (int n = 0; n < 4; n++) {
+    	sonicFrames[n] = grabframe(temp,128,64,0,0,3,n);
+	}
+        
+    destroy_bitmap(temp);
+
+    //initialize the dragon (sprite 0)
+    sprites[0] = malloc(sizeof(SPRITE));
+    sprites[0]->x = 500;
+    sprites[0]->y = 0;
+    sprites[0]->width = sprite_images[0][0]->w;
+    sprites[0]->height = sprite_images[0][0]->h;
+    sprites[0]->xdelay = 1;
+    sprites[0]->ydelay = 0;
+    sprites[0]->xcount = 0;
+    sprites[0]->ycount = 0;
+    sprites[0]->xspeed = -5;
+    sprites[0]->yspeed = 0;
+    sprites[0]->curframe = 0;
+    sprites[0]->maxframe = 5;
+    sprites[0]->framecount = 0;
+    sprites[0]->framedelay = 5;
+    sprites[0]->animdir = 1;
+}
+
 int main(void) {
 	allegro_init();
 	set_color_depth(16);
@@ -235,13 +323,17 @@ int main(void) {
 	ticks++;
 	rest(5);
 	
+	displayTitleScreen();
+	displayInstructions();
+	
 	PlayerInfo *player = new PlayerInfo();
+	SpriteHandler *spriteContainer = new SpriteHandler();
 	Sound *hardlineSounds = new Sound();
 	Sprite *cursor = new Sprite();
 	Sprite *target = new Sprite();
 	cursor->Load("sprites/cursor.bmp");
 	target->Load("sprites/target.bmp");
-	easy(cursor);
+	medium(cursor);
 	cursor->setX((WIDTH - lineLength) / 2);
 	cursor->setY(HEIGHT / 2);            
 	target->setX((WIDTH + lineLength) / 2 - 2 * target->getWidth());
@@ -249,14 +341,21 @@ int main(void) {
 	BITMAP *buffer;
 	buffer = create_bitmap(WIDTH, HEIGHT);
 	setTargetSides(cursor, target);
-	displayInstructions();
+	
+	spriteContainer->Add(cursor);
+	spriteContainer->Add(target);
 	
 	while (!key[KEY_ESC]) {
 		cursor->UpdatePosition();
 		checkCursorOnBoundary(cursor);
 		checkIfCursorPassesTarget(cursor, target);
-		if (key[KEY_SPACE]) {
-			hitTheTarget(cursor, target, player);
+		if (keypressed()) {
+			if(key[KEY_SPACE]) {
+				// Stop the if hitTheTarget function from triggering multiple times
+				// when the space key is pressed.
+				clear_keybuf();
+				hitTheTarget(cursor, target, player);	
+			}
 		}
 		//printf("x: %f, y: %f\n", cursor->getX(), cursor->getY());
 		rectfill(buffer, 0, 0, WIDTH, HEIGHT, BLACK);
@@ -272,7 +371,7 @@ int main(void) {
 
 		hardlineSounds->PollTurnOnOrOffMusic();
 		if (gameOver) {
-			displayGameOverScreen();
+			displayGameOverScreen(player);
 			if (chooseToContinue(hardlineSounds)) {
 				// Restore game to default (bring user to starting screen)
 				gameOver = false;

@@ -27,7 +27,7 @@ void timer1(void);
 void drawImage(const char * filename);
 void displayInstructions();
 void displayTitleScreen();
-void displayGameOverScreen();
+void displayGameOverScreen(PlayerInfo *player);
 void displayUserInformation(PlayerInfo *player);
 int getHorizontalSpacing(const char *text);
 void draw_pretty_box(const char * textToMeasure, int x, int y, int offset_x, int offset_y, int numLines);

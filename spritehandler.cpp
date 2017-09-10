@@ -34,3 +34,11 @@ Sprite *SpriteHandler::Get(int index)
 int SpriteHandler::Size() {
 	return _count;
 }
+
+Sprite *SpriteHandler::GetCursor() {
+	return_sprites[0];
+}
+
+Sprite *SpriteHandler::Target() {
+	return_sprites[1];
+}

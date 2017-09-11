@@ -36,9 +36,9 @@ int SpriteHandler::Size() {
 }
 
 Sprite *SpriteHandler::GetCursor() {
-	return_sprites[0];
+	return _sprites[0];
 }
 
-Sprite *SpriteHandler::Target() {
-	return_sprites[1];
+Sprite *SpriteHandler::GetTarget() {
+	return _sprites[1];
 }

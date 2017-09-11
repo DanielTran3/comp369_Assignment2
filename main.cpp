@@ -5,7 +5,7 @@ volatile int ticks;
 volatile int framerate;
 bool gameOver;
 int lineLength = 200;
-BITMAP *sonicFrames[4];
+BITMAP *mascotFrames[MASCOTFRAMES];
 //calculate framerate every second
 void timer1(void)
 {
@@ -29,54 +29,49 @@ void drawImage(const char * filename) {
 }
 
 // Title Screen
-void displayTitleScreen() {
+void displayTitleScreen(FONT *titleFont, FONT *titleFont_sm) {
 	// Replace the title with a blit to the screen with a better title
 	//drawImage(TITLE_IMAGE);
-	FONT *titleFont = load_font("fonts/Letter_Gothic_Std.pcx", NULL, NULL);
-	FONT *titleFont_sm = load_font("fonts/Letter_Gothic_Std_Small.pcx", NULL, NULL);
-	if (!titleFont || !titleFont_sm) {
-		allegro_message("Cannot find fonts/title_font.pcx file\n");
-	}
-	else {
-		BITMAP *buffer;
-		buffer = create_bitmap(WIDTH, HEIGHT);
-		int counter = 200;
-		int pointer = 0;
-		char title[9] = "HARDLINE";
+	
+	BITMAP *buffer;
+	buffer = create_bitmap(WIDTH, HEIGHT);
+	int counter = 200;
+	int pointer = 0;
+	char title[9] = "HARDLINE";
 	int title_pos[8] = {200, 230, 260, 290, 320, 350, 380, 410};
-		for (int i = 0; i < HEIGHT; i++) {
-			rectfill(buffer, 0, 0, WIDTH, HEIGHT, BLACK);
-			if (i < title_pos[pointer]) {
-				for (int k = pointer; k < strlen(title); k++) {
-					textprintf_ex(buffer, titleFont, i, 0, WHITE, -1, "%c", title[k]);				
-				}	
-			}
-			else {
-				if (pointer < strlen(title)) {
-					counter += 30;
-					pointer++;					
-				}
-			}
-			for (int j = 0; j < pointer; j++) {
-				textprintf_ex(buffer, titleFont, title_pos[j], 0, WHITE, -1, "%c", title[j]);				
-			}
-			acquire_screen();
-			blit(buffer, screen, 0, 0, 0, 0, WIDTH - 1, HEIGHT - 1);
-			release_screen();
+	for (int i = 0; i < HEIGHT; i++) {
+		rectfill(buffer, 0, 0, WIDTH, HEIGHT, BLACK);
+		if (i < title_pos[pointer]) {
+			for (int k = pointer; k < strlen(title); k++) {
+				textprintf_ex(buffer, titleFont, i, 0, WHITE, -1, "%c", title[k]);				
+			}	
 		}
-		for (int i = 210; i < 450; i++) {
-			hline(buffer, 200, 75, i, WHITE);
-			hline(buffer, 200, 76, i, WHITE);
-			hline(buffer, 200, 77, i, WHITE);
-			hline(buffer, 200, 78, i, WHITE);
-			acquire_screen();
-			blit(buffer, screen, 0, 0, 0, 0, WIDTH - 1, HEIGHT - 1);
-			release_screen();
+		else {
+			if (pointer < strlen(title)) {
+				counter += 30;
+				pointer++;					
+			}
 		}
-		textprintf_centre_ex(screen, titleFont_sm, WIDTH / 2, HEIGHT / 2 + 5 * LINE_SPACING, WHITE, -1, "Press SPACE to Start");
-		while (!key[KEY_SPACE]);
-		destroy_bitmap(buffer);
+		for (int j = 0; j < pointer; j++) {
+			textprintf_ex(buffer, titleFont, title_pos[j], 0, WHITE, -1, "%c", title[j]);				
+		}
+		acquire_screen();
+		blit(buffer, screen, 0, 0, 0, 0, WIDTH - 1, HEIGHT - 1);
+		release_screen();
 	}
+	for (int i = 210; i < 450; i++) {
+		hline(buffer, 200, 75, i, WHITE);
+		hline(buffer, 200, 76, i, WHITE);
+		hline(buffer, 200, 77, i, WHITE);
+		hline(buffer, 200, 78, i, WHITE);
+		acquire_screen();
+		blit(buffer, screen, 0, 0, 0, 0, WIDTH - 1, HEIGHT - 1);
+		release_screen();
+	}
+	textprintf_centre_ex(screen, titleFont_sm, WIDTH / 2, HEIGHT / 2 + 5 * LINE_SPACING, WHITE, -1, "Press ENTER to Start");
+	while (!key[KEY_ENTER]);
+	destroy_bitmap(buffer);
+	rest(100);
 }
 // Instructions/Controls Screen
 /*
@@ -111,17 +106,57 @@ void displayInstructions() {
 }
 
 // Level Selection Screen
+void displayLevelSelectionScreen(FONT *headerFont, FONT *selectionFont, Sprite *cursor) {
+	int xOffset = WIDTH / 4;
+    int yOffset = HEIGHT / 4 + 50;
+	textprintf_ex(screen, headerFont, xOffset / 2, yOffset, WHITE, -1, "Select A Difficulty");
+	textprintf_ex(screen, selectionFont, xOffset, yOffset + 6 * LINE_SPACING, WHITE, -1, "1 - Easy");
+	textprintf_ex(screen, selectionFont, xOffset, yOffset + 10 * LINE_SPACING, WHITE, -1, "2 - Medium");
+	textprintf_ex(screen, selectionFont, xOffset, yOffset + 14 * LINE_SPACING, WHITE, -1, "3 - Hard");
+	while (1) {
+		if (key[KEY_1]) {
+			easy(cursor);
+			break;
+		}
+		if (key[KEY_2]) {
+			medium(cursor);
+			break;
+		}
+		if (key[KEY_3]) {
+			hard(cursor);
+			break;
+		}
+	}
+}
 // Cursor Selection Screen
 // Target Selection Screen
 // Congratulations Screen
 
-void displayGameOverScreen(PlayerInfo *player) {
-	rectfill(screen, 0, 0, WIDTH, HEIGHT, BLACK);
-	draw_pretty_box("Highest Score: --", WIDTH / 8, HEIGHT / 2, 30, 30, 8);
-	textprintf_centre_ex(screen, font, WIDTH / 2, HEIGHT / 2, WHITE, -1, "Game Over");
-	textprintf_centre_ex(screen, font, WIDTH / 2, HEIGHT / 2 + 3 * LINE_SPACING, WHITE, -1, "Your Score: %i", player->getScore());
-	textprintf_centre_ex(screen, font, WIDTH / 2, HEIGHT / 2 + 4.5 * LINE_SPACING, WHITE, -1, "Highest Score: %i", player->getHighestScore());
-	textprintf_centre_ex(screen, font, WIDTH / 2, HEIGHT / 2 + 7 * LINE_SPACING, WHITE, -1, "Press Enter To Retry or ESC to Exit");
+void displayWinnerScreen(PlayerInfo *player, FONT *winnerFont) {
+	FONT *lucida_calligraphy_36 = load_font("fonts/lucida_calligraphy_36.pcx", NULL, NULL);
+	if (!lucida_calligraphy_36) {
+		allegro_message("Cannot find Lucida Calligraphy Font\n");
+	}
+	else {
+		int xOffset = WIDTH / 2;
+		int yOffset = HEIGHT / 4;
+		rectfill(screen, 0, 0, WIDTH - 1, HEIGHT - 1, BLACK);
+		textprintf_centre_ex(screen, lucida_calligraphy_36, xOffset, yOffset / 2, WHITE, -1, "Congratulations!");
+		textprintf_centre_ex(screen, font, xOffset, yOffset + 5 * LINE_SPACING, WHITE, -1, "Your Score: %i", player->getScore());
+    	textprintf_centre_ex(screen, font, xOffset, yOffset + 6.5 * LINE_SPACING, WHITE, -1, "Highest Score: %i", player->getHighestScore());
+    	textprintf_centre_ex(screen, font, xOffset, yOffset + 9 * LINE_SPACING, WHITE, -1, "Press Enter To Retry or ESC to Exit");
+	}
+}
+
+void displayGameOverScreen(PlayerInfo *player, FONT *gameOverFont) {
+    int xOffset = WIDTH / 2;
+    int yOffset = HEIGHT / 4 + 50;
+    rectfill(screen, 0, 0, WIDTH, HEIGHT, BLACK);
+    draw_pretty_box("Press Enter To Retry or ESC to Exit", xOffset / 2 + 20, yOffset, 30, 30, 12);
+    textprintf_centre_ex(screen, gameOverFont, xOffset, yOffset, WHITE, -1, "Game Over");
+    textprintf_centre_ex(screen, font, xOffset, yOffset + 5 * LINE_SPACING, WHITE, -1, "Your Score: %i", player->getScore());
+    textprintf_centre_ex(screen, font, xOffset, yOffset + 6.5 * LINE_SPACING, WHITE, -1, "Highest Score: %i", player->getHighestScore());
+    textprintf_centre_ex(screen, font, xOffset, yOffset + 9 * LINE_SPACING, WHITE, -1, "Press Enter To Retry or ESC to Exit");
 }
 
 /*
@@ -199,32 +234,37 @@ void checkCursorOnBoundary(Sprite *cursor) {
 	}
 }
 
-void hitTheTarget(Sprite *cursor, Sprite *target, PlayerInfo *player) {
+bool hitTheTarget(Sprite *cursor, Sprite *target) {
 	//rest(10);
 	int edgeOffsetFactor = 5;
 	if (target->PointInside(cursor->CenterX(), cursor->CenterY())) {
 		printf("COLLIDED");
-		// Subtract half the target width and a small factor so the target doesn't appear on the end of the line,
-		// Since the detection for losing the game is based on the right/left edge of the target
-		int randomLocation = (WIDTH - lineLength + target->getWidth()) / 2 + rand() % (lineLength - 2 * target->getWidth());
-		target->setX(randomLocation);
-		// Ensure the new target position is not overlapping with the cursor
-		// Add some buffer space amount to this --------------
-		while (cursor->Collided(target, 0)) {
-			randomLocation = (WIDTH - lineLength + target->getWidth()) / 2 + rand() % (lineLength  - 2 * target->getWidth());
-			target->setX(randomLocation);
-		}
-		target->setX(randomLocation);
-		
-		cursor->ChangeDirection();
-		player->IncreaseScore(cursor);
-
-		setTargetSides(cursor, target);
+		return true;
 	}
 	else {
 		printf("GAMEOVER");
 		gameOver = true;
+		return false;
 	}
+}
+
+void relocateTarget(Sprite *cursor, Sprite *target, PlayerInfo *player) {
+	// Subtract half the target width and a small factor so the target doesn't appear on the end of the line,
+	// Since the detection for losing the game is based on the right/left edge of the target
+	int randomLocation = (WIDTH - lineLength + target->getWidth()) / 2 + rand() % (lineLength - 2 * target->getWidth());
+	target->setX(randomLocation);
+	// Ensure the new target position is not overlapping with the cursor
+	// Add some buffer space amount to this --------------
+	while (cursor->Collided(target, 0)) {
+		randomLocation = (WIDTH - lineLength + target->getWidth()) / 2 + rand() % (lineLength  - 2 * target->getWidth());
+		target->setX(randomLocation);
+	}
+	target->setX(randomLocation);
+	
+	cursor->ChangeDirection();
+	player->IncreaseScore(cursor);
+
+	setTargetSides(cursor, target);
 }
 
 void setTargetSides(Sprite *cursor, Sprite *target) {
@@ -273,32 +313,51 @@ BITMAP *grabframe(BITMAP *source,
     return temp;
 }
 
-Sprite *createSonicAnimSprite() {
+Sprite *createMascotAnimSprite() {
 	Sprite *tempSprite = new Sprite();
-	temp = load_bitmap("sprites/sonic.bmp", NULL);
-    for (int n = 0; n < 4; n++) {
-    	sonicFrames[n] = grabframe(temp,128,64,0,0,3,n);
+	int ret = tempSprite->Load("sprites/Sonic.bmp");
+    if (!ret) {
+    	allegro_message("Error loading mascot sprite sheet.");
+    	return NULL;
 	}
-        
-    destroy_bitmap(temp);
+	
+	for (int n = 0; n < 4; n++) {
+    	mascotFrames[n] = grabframe(tempSprite->getImage(), 37, 46, 0, 0, 4, n);
+	}
 
-    //initialize the dragon (sprite 0)
-    sprites[0] = malloc(sizeof(SPRITE));
-    sprites[0]->x = 500;
-    sprites[0]->y = 0;
-    sprites[0]->width = sprite_images[0][0]->w;
-    sprites[0]->height = sprite_images[0][0]->h;
-    sprites[0]->xdelay = 1;
-    sprites[0]->ydelay = 0;
-    sprites[0]->xcount = 0;
-    sprites[0]->ycount = 0;
-    sprites[0]->xspeed = -5;
-    sprites[0]->yspeed = 0;
-    sprites[0]->curframe = 0;
-    sprites[0]->maxframe = 5;
-    sprites[0]->framecount = 0;
-    sprites[0]->framedelay = 5;
-    sprites[0]->animdir = 1;
+    tempSprite->setX(647);
+    tempSprite->setY(100);
+    tempSprite->setWidth(mascotFrames[0]->w);
+    tempSprite->setHeight(mascotFrames[0]->h);
+    tempSprite->setXDelay(1);
+    tempSprite->setYDelay(0);
+    tempSprite->setXCount(0);
+    tempSprite->setYCount(0);
+    tempSprite->setVelX(-5);
+    tempSprite->setVelY(0);
+    tempSprite->setCurFrame(0);
+    tempSprite->setTotalFrames(4);
+    tempSprite->setAnimColumns(4);
+    tempSprite->setFrameCount(0);
+    tempSprite->setFrameDelay(6);
+    tempSprite->setAnimDir(1);
+    return tempSprite;
+}
+
+void animateMascot(BITMAP * buffer, Sprite *mascot, PlayerInfo *player, FONT *levelFont) {
+	rectfill(buffer, 0, 0, WIDTH - 1, HEIGHT - 1, BLACK);
+	if (player->HasLeveled()) {
+		if (mascot->getX() > 0) {
+			mascot->UpdatePosition();
+        	mascot->UpdateAnimation();
+			mascot->DrawFrame(buffer);
+			textprintf_centre_ex(buffer, levelFont, WIDTH / 2, 100, WHITE, -1, "LEVEL %i", player->getLevel());
+		}
+		else {
+			mascot->setX(647);
+			player->ResetLeveled();	
+		}
+	}
 }
 
 int main(void) {
@@ -319,13 +378,20 @@ int main(void) {
 		return 1;
 	}
 	
+	FONT *letter_gothic_48 = load_font("fonts/Letter_Gothic_Std_48.pcx", NULL, NULL);
+	FONT *letter_gothic_28 = load_font("fonts/Letter_Gothic_Std_28.pcx", NULL, NULL);
+	FONT *letter_gothic_24 = load_font("fonts/Letter_Gothic_Std_24.pcx", NULL, NULL);
+	FONT *letter_gothic_12 = load_font("fonts/Letter_Gothic_Std_12.pcx", NULL, NULL);
+	if (!letter_gothic_48 || !letter_gothic_24 || !letter_gothic_12) {
+		allegro_message("Cannot find fonts/title_font.pcx file\n");
+		return 1;
+	}
 	// Incorrect
 	ticks++;
 	rest(5);
 	
-	displayTitleScreen();
+	displayTitleScreen(letter_gothic_48, letter_gothic_24);
 	displayInstructions();
-	
 	PlayerInfo *player = new PlayerInfo();
 	SpriteHandler *spriteContainer = new SpriteHandler();
 	Sound *hardlineSounds = new Sound();
@@ -333,7 +399,7 @@ int main(void) {
 	Sprite *target = new Sprite();
 	cursor->Load("sprites/cursor.bmp");
 	target->Load("sprites/target.bmp");
-	medium(cursor);
+	displayLevelSelectionScreen(letter_gothic_28, letter_gothic_24, cursor);
 	cursor->setX((WIDTH - lineLength) / 2);
 	cursor->setY(HEIGHT / 2);            
 	target->setX((WIDTH + lineLength) / 2 - 2 * target->getWidth());
@@ -344,7 +410,8 @@ int main(void) {
 	
 	spriteContainer->Add(cursor);
 	spriteContainer->Add(target);
-	
+	spriteContainer->Add(createMascotAnimSprite());
+
 	while (!key[KEY_ESC]) {
 		cursor->UpdatePosition();
 		checkCursorOnBoundary(cursor);
@@ -354,24 +421,39 @@ int main(void) {
 				// Stop the if hitTheTarget function from triggering multiple times
 				// when the space key is pressed.
 				clear_keybuf();
-				hitTheTarget(cursor, target, player);	
+				if (hitTheTarget(cursor, target)) {
+					relocateTarget(cursor, target, player);
+				}
 			}
 		}
-		//printf("x: %f, y: %f\n", cursor->getX(), cursor->getY());
-		rectfill(buffer, 0, 0, WIDTH, HEIGHT, BLACK);
-		displayUserInformation(player, buffer);
-		hline(buffer, (WIDTH - lineLength) / 2, HEIGHT / 2, (WIDTH + lineLength) / 2, WHITE);
-		draw_sprite(buffer, target->getImage(), target->getX(), target->getY());
-		
-		draw_sprite(buffer, cursor->getImage(), cursor->getX(), cursor->getY());
-		//textprintf_ex(buffer, font, 0, 0, WHITE, -1, "Frames: %i", framerate);
-		acquire_screen();
-		blit(buffer, screen, 0, 0, 0, 0, WIDTH - 1, HEIGHT - 1);
-		release_screen();
+		if (player->getLevel() < 2) {
+			animateMascot(buffer, spriteContainer->Get(2), player, letter_gothic_24);
+			displayUserInformation(player, buffer);
+			hline(buffer, (WIDTH - lineLength) / 2, HEIGHT / 2, (WIDTH + lineLength) / 2, WHITE);
+			draw_sprite(buffer, target->getImage(), target->getX(), target->getY());
+			
+			draw_sprite(buffer, cursor->getImage(), cursor->getX(), cursor->getY());
+			//textprintf_ex(buffer, font, 0, 0, WHITE, -1, "Frames: %i", framerate);
+			acquire_screen();
+			blit(buffer, screen, 0, 0, 0, 0, WIDTH - 1, HEIGHT - 1);
+			release_screen();
+		}
+		else {
+			displayWinnerScreen(player, letter_gothic_12);
+			if (chooseToContinue(hardlineSounds)) {
+				// Restore game to default (bring user to starting screen)
+				gameOver = false;
+				setTargetSides(cursor, target);
+				continue;
+			}
+			else {
+				break;
+			}
+		}
 
 		hardlineSounds->PollTurnOnOrOffMusic();
 		if (gameOver) {
-			displayGameOverScreen(player);
+			displayGameOverScreen(player, letter_gothic_24);
 			if (chooseToContinue(hardlineSounds)) {
 				// Restore game to default (bring user to starting screen)
 				gameOver = false;
@@ -384,6 +466,10 @@ int main(void) {
 		}
 	}
 	
+	for (int f = 0; f < MASCOTFRAMES; f++) {
+		destroy_bitmap(mascotFrames[f]);
+	}
+        
 	delete hardlineSounds;
 	allegro_exit();
 	return 0;

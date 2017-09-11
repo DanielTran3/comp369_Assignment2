@@ -7,6 +7,7 @@ PlayerInfo::PlayerInfo() {
 	_highestLevel = 0;
 	_difficulty = 0;
 	_numHits = 0;
+	_hasLeveled = false;
 }
 
 PlayerInfo::~PlayerInfo() {
@@ -19,6 +20,7 @@ void PlayerInfo::IncreaseLevel(Sprite *cursor) {
 		_highestLevel = _level;
 		cursor->IncreaseSpeed();
 	}
+	_hasLeveled = true;
 }
 void PlayerInfo::IncreaseScore(Sprite *cursor) {
 	_score++;
@@ -71,4 +73,10 @@ int PlayerInfo::getNumHits() {
 }
 void PlayerInfo::setNumHits(int numHits) {
 	_numHits = numHits;
+}
+bool PlayerInfo::HasLeveled() {
+	return _hasLeveled;
+}
+void PlayerInfo::ResetLeveled() {
+	_hasLeveled = false;
 }

@@ -17,6 +17,8 @@
 #define CHARACTER_WIDTH 8
 #define LINE_SPACING 10
 
+#define MASCOTFRAMES 4
+
 #define WHITE makecol(255, 255, 255)
 #define BLACK makecol(0, 0, 0)
 #define LIGHT_GREEN makecol(100, 255, 0)
@@ -36,7 +38,11 @@ void easy(Sprite *cursor);
 void medium(Sprite *cursor);
 void hard(Sprite *cursor);
 void checkCursorOnBoundary(Sprite *cursor);
-void hitTheTarget(Sprite *cursor, Sprite *target, PlayerInfo *player);
+bool hitTheTarget(Sprite *cursor, Sprite *target);
+void relocateTarget(Sprite *cursor, Sprite *target, PlayerInfo *player);
 void setTargetSides(Sprite *cursor, Sprite *target);
 void checkIfCursorPassesTarget(Sprite *cursor, Sprite * target);
+BITMAP *grabframe(BITMAP *source, int width, int height, int startx, int starty, int columns, int frame);
+Sprite *createMascotAnimSprite();
+void animateMascot(PlayerInfo *player);
 #endif

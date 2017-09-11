@@ -1,7 +1,10 @@
 #ifndef _PLAYERINFO_H
 
 #include "sprite.h"
+#include "allegro.h"
 
+#define WIDTH 640
+#define HEIGHT 480
 #define HITSBEFORELEVELUP 5
 
 class PlayerInfo {
@@ -12,6 +15,7 @@ class PlayerInfo {
 		int _highestLevel;
 		int _difficulty;
 		int _numHits;
+		bool _hasLeveled;
 	public:
 		PlayerInfo();
 		~PlayerInfo();
@@ -32,6 +36,8 @@ class PlayerInfo {
 		void setDifficulty(int difficulty);
 		int getNumHits();
 		void setNumHits(int numHits);
+		bool HasLeveled();
+		void ResetLeveled();
 };
 
 #endif

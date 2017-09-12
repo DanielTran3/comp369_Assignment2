@@ -16,8 +16,13 @@
 
 #define CHARACTER_WIDTH 8
 #define LINE_SPACING 10
-
 #define MASCOTFRAMES 4
+
+#define TITLE_BACKGROUND "images/title.pcx"
+#define INSTRUCTIONS_BACKGROUND "images/instructions.pcx"
+#define LEVELS_BACKGROUND "images/levels.pcx"
+#define BACKGROUND "images/background_1.pcx"
+#define GAMEOVER_BACKGROUND "images/ending.pcx"
 
 #define WHITE makecol(255, 255, 255)
 #define BLACK makecol(0, 0, 0)

@@ -70,6 +70,7 @@ void Sound::PollTurnOnOrOffMusic() {
 		setVolume(_volume == 0 ? 128 : 0);
 		updateSound(_bgm);
 		rest(10);
+		clear_keybuf();
 	}
 }
 

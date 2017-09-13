@@ -6,6 +6,7 @@ volatile int framerate;
 bool gameOver;
 int lineLength = 200;
 BITMAP *mascotFrames[MASCOTFRAMES];
+Sound *hardlineSounds;
 //calculate framerate every second
 void timer1(void)
 {
@@ -28,6 +29,9 @@ void drawImage(const char * filename) {
 	destroy_bitmap(image);
 }
 
+/*
+	Draws a fullscreen image from an input file onto a bitmap.
+*/
 void drawImage(const char * filename, BITMAP *bitmap) {
 	BITMAP *image;
 	image = load_bitmap(filename, NULL);
@@ -39,7 +43,9 @@ void drawImage(const char * filename, BITMAP *bitmap) {
 	destroy_bitmap(image);
 }
 
-// Title Screen
+/*
+	Animate and displays the title screen
+*/
 void displayTitleScreen(FONT *titleFont, FONT *titleFont_sm) {
 	// Load image here instead of using the displayImage function because we don't want
 	// to load and destroy the image bitmap ever loop, as that takes too long
@@ -51,24 +57,27 @@ void displayTitleScreen(FONT *titleFont, FONT *titleFont_sm) {
 	
 	BITMAP *buffer;
 	buffer = create_bitmap(WIDTH, HEIGHT);
-	int counter = 200;
+	// Keeps track of the left-most character until the animation passes that characters'
+	// position defined in title_pos
 	int pointer = 0;
-	char title[9] = "HARDLINE";
+	char title[9] = "HARDLINE"; // Char array containing individual letters of the title
 	int title_pos[8] = {200, 230, 260, 290, 320, 350, 380, 410};
+	
+	// Loops to animate the title transition from left to right.
 	for (int i = 0; i < HEIGHT; i++) {
 		blit(image, buffer, 0, 0, 0, 0, WIDTH, HEIGHT);
-//		rectfill(buffer, 0, 0, WIDTH, HEIGHT, BLACK);
+		// Moves all of the characters who's positions are greater than the current character's final position
 		if (i < title_pos[pointer]) {
 			for (int k = pointer; k < strlen(title); k++) {
 				textprintf_ex(buffer, titleFont, i, 110, BLACK, -1, "%c", title[k]);				
 			}	
 		}
-		else {
+		else { // If the current character's final position is passed, move onto the next character
 			if (pointer < strlen(title)) {
-				counter += 30;
 				pointer++;					
 			}
 		}
+		// Display all of the characters where i has passed their final position (not animated anymore)
 		for (int j = 0; j < pointer; j++) {
 			textprintf_ex(buffer, titleFont, title_pos[j], 110, BLACK, -1, "%c", title[j]);				
 		}
@@ -76,6 +85,7 @@ void displayTitleScreen(FONT *titleFont, FONT *titleFont_sm) {
 		blit(buffer, screen, 0, 0, 0, 0, WIDTH - 1, HEIGHT - 1);
 		release_screen();
 	}
+	// Draws the animations for the line under the title. Multiple lines are drawn to create the effect of a thicker line
 	for (int i = 210; i < 450; i++) {
 		hline(buffer, 200, 185, i, BLACK);
 		hline(buffer, 200, 186, i, BLACK);
@@ -85,15 +95,21 @@ void displayTitleScreen(FONT *titleFont, FONT *titleFont_sm) {
 		blit(buffer, screen, 0, 0, 0, 0, WIDTH - 1, HEIGHT - 1);
 		release_screen();
 	}
+	
 	textprintf_centre_ex(screen, titleFont_sm, WIDTH / 2, HEIGHT / 2 + 9 * LINE_SPACING, BLACK, -1, "Press ENTER to Start");
-	while (!key[KEY_ENTER]);
+	
+	// Allows for toggling of sound and music on this screen
+	while (!key[KEY_ENTER]) {
+		hardlineSounds->PollTurnOnOrOffMusic();
+	}
 	destroy_bitmap(buffer);
+	// Rest and clear any characters in the keyboard buffer so key presses don't transfer to the next screen
 	rest(100);
 	clear_keybuf();
 }
-// Instructions/Controls Screen
+
 /*
-	Draws the instructions screen
+	Displays the instructions screen
 */
 void displayInstructions() {
 	int xOffset = WIDTH / 2;
@@ -108,23 +124,30 @@ void displayInstructions() {
 	textout_centre_ex(screen, font, "A cursor moves on the screen and your goal is", xOffset, yOffset + 5 * LINE_SPACING, WHITE, 0);
 	textout_centre_ex(screen, font, "to press SPACE when the cursor touches the target!", xOffset, yOffset + 6 * LINE_SPACING, WHITE, 0);
 	
-	textout_centre_ex(screen, font, "Everytime you hit the target, ", xOffset, yOffset + 8 * LINE_SPACING, WHITE, 0);
-	textout_centre_ex(screen, font, "your score increases and the cursor", xOffset, yOffset + 9 * LINE_SPACING, WHITE, 0);
-	textout_centre_ex(screen, font, "will move in the opposite direction.", xOffset, yOffset + 10 * LINE_SPACING, WHITE, 0);
-	textout_centre_ex(screen, font, "Every 5 target hits will increase the speed of the cursor!", xOffset, yOffset + 11 * LINE_SPACING, WHITE, 0);
-	textout_centre_ex(screen, font, "If you miss or the cursor passes the target, you lose the game!", xOffset, yOffset + 12 * LINE_SPACING, WHITE, 0);
+	textout_centre_ex(screen, font, "Everytime you hit the target, your score increases", xOffset, yOffset + 8 * LINE_SPACING, WHITE, 0);
+	textout_centre_ex(screen, font, "and the cursor will move in the opposite direction.", xOffset, yOffset + 9 * LINE_SPACING, WHITE, 0);
+	textout_centre_ex(screen, font, "Every 5 target hits will increase the speed of the cursor!", xOffset, yOffset + 10 * LINE_SPACING, WHITE, 0);
+	textout_centre_ex(screen, font, "If you miss or the cursor passes the target, you lose the game!", xOffset, yOffset + 11 * LINE_SPACING, WHITE, 0);
 		
-	textout_centre_ex(screen, font, "That's all there is to this game! Enjoy!", xOffset, yOffset + 14 * LINE_SPACING, WHITE, 0);
-	
+	textout_centre_ex(screen, font, "---Controls---", xOffset, yOffset + 14 * LINE_SPACING, WHITE, 0);
+	textout_ex(screen, font, "Hit the Target: SPACE", xOffset - 75, yOffset + 15 * LINE_SPACING, WHITE, 0);
+	textout_ex(screen, font, "Toggle Music  : CTRL + M", xOffset - 75, yOffset + 16 * LINE_SPACING, WHITE, 0);
+	textout_ex(screen, font, "Help Menu     : CTRL + H", xOffset - 75, yOffset + 17 * LINE_SPACING, WHITE, 0);
 	textout_centre_ex(screen, font, "Press ENTER to Continue", xOffset, yOffset + 20 * LINE_SPACING, WHITE, 0);
 	
-	while (!key[KEY_ENTER]);
+	// Allows for toggling of sound and music on this screen
+	while (!key[KEY_ENTER]) {
+		hardlineSounds->PollTurnOnOrOffMusic();
+	}
+	// Rest and clear any characters in the keyboard buffer so key presses don't transfer to the next screen
 	rest(100);
 	clear_keybuf();
 }
 
-// Level Selection Screen
-void displayLevelSelectionScreen(FONT *headerFont, FONT *selectionFont, Sprite *cursor) {
+/*
+	Displays the difficulty selection screen
+*/
+void displayDifficultySelectionScreen(FONT *headerFont, FONT *selectionFont, Sprite *cursor) {
 	drawImage(LEVELS_BACKGROUND);
 	int xOffset = WIDTH / 4;
     int yOffset = HEIGHT / 6 + 50;
@@ -132,7 +155,9 @@ void displayLevelSelectionScreen(FONT *headerFont, FONT *selectionFont, Sprite *
 	textprintf_ex(screen, selectionFont, xOffset, yOffset + 6 * LINE_SPACING, BLACK, -1, "1 - Easy");
 	textprintf_ex(screen, selectionFont, xOffset, yOffset + 10 * LINE_SPACING, BLACK, -1, "2 - Medium");
 	textprintf_ex(screen, selectionFont, xOffset, yOffset + 14 * LINE_SPACING, BLACK, -1, "3 - Hard");
+	// Changes the difficulty depending on the user's input
 	while (1) {
+		hardlineSounds->PollTurnOnOrOffMusic();
 		if (key[KEY_1]) {
 			easy(cursor);
 			break;
@@ -148,6 +173,9 @@ void displayLevelSelectionScreen(FONT *headerFont, FONT *selectionFont, Sprite *
 	}
 }
 
+/*
+	Displays the help screen
+*/
 void displayHelpScreen(FONT *helpTitle, FONT *helpFont) {
 	int xOffset = WIDTH / 2;
 	
@@ -157,7 +185,10 @@ void displayHelpScreen(FONT *helpTitle, FONT *helpFont) {
 	textprintf_centre_ex(screen, helpFont, xOffset, HEIGHT / 2 + 16 * LINE_SPACING, WHITE, -1, "Press ENTER to exit the help screen");
 	textprintf_centre_ex(screen, helpFont, xOffset, HEIGHT / 2 + 18 * LINE_SPACING, WHITE, -1, "OR SPACE to display the instructions");
 
+	// Exit the help screen and continue the game, or display the instructions screen.
 	while(1) {
+		// Allows for toggling of sound and music on this screen
+		hardlineSounds->PollTurnOnOrOffMusic();
 		if (key[KEY_ENTER]) {
 			break;
 		}
@@ -167,11 +198,14 @@ void displayHelpScreen(FONT *helpTitle, FONT *helpFont) {
 	}
 }
 
+/*
+	Displays the game over screen
+*/
 void displayGameOverScreen(PlayerInfo *player, FONT *gameOverFont) {
 	drawImage(GAMEOVER_BACKGROUND);
     int xOffset = WIDTH / 2;
     int yOffset = HEIGHT / 4 + 50;
-    //rectfill(screen, 0, 0, WIDTH, HEIGHT, BLACK);
+
     draw_pretty_box("Press Enter To Retry or ESC to Exit", xOffset / 2 + 20, yOffset, 30, 30, 12);
     textprintf_centre_ex(screen, gameOverFont, xOffset, yOffset - 20, WHITE, -1, "Game Over");
     textprintf_centre_ex(screen, font, xOffset, yOffset + 5 * LINE_SPACING, WHITE, -1, "Your Score:    %i", player->getScore());
@@ -180,7 +214,7 @@ void displayGameOverScreen(PlayerInfo *player, FONT *gameOverFont) {
 }
 
 /*
-	Function to display the title of the game, the type of quiz the user selected, and the user's score.
+	Displays the user's current stats, including the current level, player's score, and the player's highest score
 */
 void displayUserInformation(PlayerInfo *player, BITMAP *buffer) {
 	int xOffset = WIDTH / 2;
@@ -208,9 +242,13 @@ void draw_pretty_box(const char * textToMeasure, int x, int y, int offset_x, int
 	rect(screen, x - offset_x, y - offset_y, x + textLength + offset_x, y + (numLines * LINE_SPACING) + offset_y, WHITE);
 }
 
-bool chooseToContinue(Sound *music) {
+/*
+	Function that returns true if the player wants to retry the game, or false if they want to quit the game.
+*/
+bool chooseToContinue() {
 	while(1) {
-		music->PollTurnOnOrOffMusic();
+		// Allows for toggling of sound and music on this screen
+		hardlineSounds->PollTurnOnOrOffMusic();
 		if (key[KEY_ESC]) {
 			return false;
 		}
@@ -220,73 +258,98 @@ bool chooseToContinue(Sound *music) {
 	}
 }
 
+/*
+	Settings for easy difficulty. A long line and slow moving cursor
+*/
 void easy(Sprite *cursor) {
 	lineLength = 500;
-	cursor->setXDelay(10);
+	cursor->setXDelay(4);
+	cursor->setYDelay(0);
+	cursor->setVelX(1.5);
+	cursor->setVelY(0);
+}
+
+/*
+	Settings for medium difficulty. A medium length line and medium speed moving cursor
+*/
+void medium(Sprite *cursor) {
+	lineLength = 350;
+	cursor->setXDelay(4);
+	cursor->setYDelay(0);
+	cursor->setVelX(2.0);
+	cursor->setVelY(0);
+}
+
+/*
+	Settings for hard difficulty. A short line and fast speed moving cursor
+*/
+void hard(Sprite *cursor) {
+	lineLength = 250;
+	cursor->setXDelay(4);
 	cursor->setYDelay(0);
 	cursor->setVelX(3.0);
 	cursor->setVelY(0);
 }
 
-void medium(Sprite *cursor) {
-	lineLength = 350;
-	cursor->setXDelay(8);
-	cursor->setYDelay(0);
-	cursor->setVelX(5.0);
-	cursor->setVelY(0);
-}
-
-void hard(Sprite *cursor) {
-	lineLength = 250;
-	cursor->setXDelay(8);
-	cursor->setYDelay(0);
-	cursor->setVelX(8.0);
-	cursor->setVelY(0);
-}
-
+/*
+	Function that checks if the cursor hit the boundary of the line. If it did, then
+	reverse the cursor's direction
+*/
 void checkCursorOnBoundary(Sprite *cursor) {
+	// Cursor hit the right side of the line
 	if (cursor->getX() > (WIDTH + lineLength - cursor->getWidth()) / 2) {
 			cursor->setX((WIDTH + lineLength - cursor->getWidth()) / 2);
 			cursor->setDirection(-1);
 		}
+	// Cursor hit the left side of the line
 	if (cursor->getX() < (WIDTH - lineLength - cursor->getWidth()) / 2) {
 		cursor->setX((WIDTH - lineLength - cursor->getWidth()) / 2);
 		cursor->setDirection(1);
 	}
 }
 
+/*
+	Determines if the cursor has hit the target
+*/
 bool hitTheTarget(Sprite *cursor, Sprite *target) {
-	//rest(10);
-	int edgeOffsetFactor = 5;
+	// Check if the center of the cursor is anywhere in the space of the target.
+	// If so, the target was hit and true is returned
 	if (target->PointInside(cursor->CenterX(), cursor->CenterY())) {
-		printf("COLLIDED");
 		return true;
 	}
+	// Cursor missed the target, so set gameOver flag to true and return false
 	else {
-		printf("GAMEOVER");
 		gameOver = true;
 		return false;
 	}
 }
 
+/*
+	Moves the target to a random position after the cursor hit the target.
+*/
 void relocateTarget(Sprite *cursor, Sprite *target) {
 	// Subtract half the target width and a small factor so the target doesn't appear on the end of the line,
-	// Since the detection for losing the game is based on the right/left edge of the target
+	// since the detection for losing the game is based on the right/left edge of the target
 	int randomLocation = (WIDTH - lineLength + target->getWidth()) / 2 + rand() % (lineLength - 2 * target->getWidth());
 	target->setX(randomLocation);
-	// Ensure the new target position is not overlapping with the cursor
-	// Add some buffer space amount to this --------------
+	
+	// Ensure the new target position is not overlapping with the cursor, otherwise generate a new position
 	while (cursor->Collided(target, 0)) {
 		randomLocation = (WIDTH - lineLength + target->getWidth()) / 2 + rand() % (lineLength  - 2 * target->getWidth());
 		target->setX(randomLocation);
 	}
-	target->setX(randomLocation);
 	
+	// Reverse the direction of the cursor after a target is hit
 	cursor->ChangeDirection();
 
+	// Change the side of the target that the cursor must pass depending on the target's
+	// position in respect to the cursor
 	setTargetSides(cursor, target);
 }
 
+/*
+	Sets the side of the target that will cause the game to end if the cursor passes it.
+*/
 void setTargetSides(Sprite *cursor, Sprite *target) {
 	// Depending on the randomLocation placement of the target in respect to the current location of the cursor,
 	// this can be used to determine which side of the target the cursor has to pass in order to determine that
@@ -303,12 +366,17 @@ void setTargetSides(Sprite *cursor, Sprite *target) {
 	}
 }
 
+/*
+	Function to check if the cursor has passed the target's side that was set by the setTargetSides() function
+*/
 void checkIfCursorPassesTarget(Sprite *cursor, Sprite * target) {
+	// Check for cursor passing the left side
 	if (target->getPassLeftSideToLose()) {
 		if (cursor->CenterX() < target->getLeftOrRightSide()) {
 			gameOver = true;
 		}	
 	}
+	// Check for cursor passing the right side
 	else {
 		if (cursor->CenterX() > target->getLeftOrRightSide()) {
 			gameOver = true;
@@ -317,7 +385,9 @@ void checkIfCursorPassesTarget(Sprite *cursor, Sprite * target) {
 	
 }
 
-//reuse our friendly tile grabber from chapter 9
+/*
+	Frame grabbing function from Chapter 9 of the Textbook
+*/
 BITMAP *grabframe(BITMAP *source, 
                   int width, int height, 
                   int startx, int starty, 
@@ -333,7 +403,11 @@ BITMAP *grabframe(BITMAP *source,
     return temp;
 }
 
+/*
+	Initializing the mascot (Sonic)'s position, velocity, and animation frames
+*/
 Sprite *createMascotAnimSprite() {
+	// Create and load the sprite 
 	Sprite *tempSprite = new Sprite();
 	int ret = tempSprite->Load(SONIC);
     if (!ret) {
@@ -341,10 +415,12 @@ Sprite *createMascotAnimSprite() {
     	return NULL;
 	}
 	
+	// Get the animation fromes for Sonic
 	for (int n = 0; n < 4; n++) {
     	mascotFrames[n] = grabframe(tempSprite->getImage(), 37, 46, 0, 0, 4, n);
 	}
-
+	
+	// Set sonic at the right side of the screen and his velocity negative so he moves to the left.
     tempSprite->setX(647);
     tempSprite->setY(100);
     tempSprite->setWidth(mascotFrames[0]->w);
@@ -364,9 +440,13 @@ Sprite *createMascotAnimSprite() {
     return tempSprite;
 }
 
+/*
+	Animation for the game's mascot (Sonic) running past the screen on a level up
+*/
 void animateMascot(BITMAP * buffer, Sprite *mascot, PlayerInfo *player, FONT *levelFont) {
-	//rectfill(buffer, 0, 0, WIDTH - 1, HEIGHT - 1, BLACK);
+	// check if the user has leveled up (the level up flag is on
 	if (player->HasLeveled()) {
+		// If the mascot hasn't reached the right side of the screen yet, update his position and animation frame
 		if (mascot->getX() > 0) {
 			mascot->UpdatePosition();
         	mascot->UpdateAnimation();
@@ -374,12 +454,16 @@ void animateMascot(BITMAP * buffer, Sprite *mascot, PlayerInfo *player, FONT *le
 			textprintf_centre_ex(buffer, levelFont, WIDTH / 2, 100, BLACK, -1, "LEVEL %i", player->getLevel());
 		}
 		else {
+			// Reset the mascot to the right side of the screen and set the leveled up variable false
 			mascot->setX(647);
 			player->ResetLeveled();	
 		}
 	}
 }
 
+/*
+	Reset some of the game parameters
+*/
 void restartGame(PlayerInfo *player, Sprite *cursor, Sprite *target) {
 	cursor->setX((WIDTH - lineLength) / 2);
 	cursor->setY(HEIGHT / 2);            
@@ -392,11 +476,11 @@ void restartGame(PlayerInfo *player, Sprite *cursor, Sprite *target) {
 	player->ResetLeveled();
 }
 
-void helpMenu(Sound *sounds, FONT *helpTitle, FONT *helpFont) {
+void helpMenu(FONT *helpTitle, FONT *helpFont) {
 	if ((key[KEY_LCONTROL] && key[KEY_H]) ||
 		(key[KEY_RCONTROL] && key[KEY_H])) { 
-		sounds->setSoundEffect(PAUSE_SFX);
-		sounds->playSoundEffect();
+		hardlineSounds->setSoundEffect(PAUSE_SFX);
+		hardlineSounds->playSoundEffect();
 		displayHelpScreen(helpTitle, helpFont);
 	}
 }
@@ -418,7 +502,7 @@ int main(void) {
 		allegro_message("Error setting up screen!");
 		return 1;
 	}
-	
+	hardlineSounds = new Sound();
 	FONT *letter_gothic_48 = load_font("fonts/Letter_Gothic_Std_48.pcx", NULL, NULL);
 	FONT *letter_gothic_28 = load_font("fonts/Letter_Gothic_Std_28.pcx", NULL, NULL);
 	FONT *letter_gothic_24 = load_font("fonts/Letter_Gothic_Std_24.pcx", NULL, NULL);
@@ -432,17 +516,14 @@ int main(void) {
 	ticks++;
 	rest(5);
 	
-	Sound *hardlineSounds = new Sound();
-	
 	displayTitleScreen(letter_gothic_48, letter_gothic_24);
 	displayInstructions();
 	PlayerInfo *player = new PlayerInfo();
-	SpriteHandler *spriteContainer = new SpriteHandler();
 	Sprite *cursor = new Sprite();
 	Sprite *target = new Sprite();
 	cursor->Load(CURSOR);
 	target->Load(TARGET);
-	displayLevelSelectionScreen(letter_gothic_28, letter_gothic_24, cursor);
+	displayDifficultySelectionScreen(letter_gothic_28, letter_gothic_24, cursor);
 	cursor->setX((WIDTH - lineLength) / 2);
 	cursor->setY(HEIGHT / 2);            
 	target->setX((WIDTH + lineLength) / 2 - 2 * target->getWidth());
@@ -451,9 +532,7 @@ int main(void) {
 	BITMAP *buffer;
 	buffer = create_bitmap(WIDTH, HEIGHT);
 	
-	spriteContainer->Add(cursor);
-	spriteContainer->Add(target);
-	spriteContainer->Add(createMascotAnimSprite());
+	Sprite *mascot = createMascotAnimSprite();
 	
 	BITMAP *background_image;
 	background_image = load_bitmap(BACKGROUND, NULL);
@@ -462,7 +541,7 @@ int main(void) {
 	}
 
 	while (!key[KEY_ESC]) {
-		helpMenu(hardlineSounds, lucida_calligraphy_36, letter_gothic_12);
+		helpMenu(lucida_calligraphy_36, letter_gothic_12);
 		cursor->UpdatePosition();
 		checkCursorOnBoundary(cursor);
 		checkIfCursorPassesTarget(cursor, target);
@@ -478,7 +557,7 @@ int main(void) {
 			}
 		}
 		blit(background_image, buffer, 0, 0, 0, 0, WIDTH, HEIGHT);
-		animateMascot(buffer, spriteContainer->Get(2), player, letter_gothic_24);
+		animateMascot(buffer, mascot, player, letter_gothic_24);
 		displayUserInformation(player, buffer);
 		hline(buffer, (WIDTH - lineLength) / 2, HEIGHT / 2 - 1, (WIDTH + lineLength) / 2, BLACK);
 		hline(buffer, (WIDTH - lineLength) / 2, HEIGHT / 2, (WIDTH + lineLength) / 2, BLACK);
@@ -498,12 +577,12 @@ int main(void) {
 			hardlineSounds->setSoundEffect(GAMEOVER_SFX);
 			hardlineSounds->playSoundEffect();
 			displayGameOverScreen(player, lucida_calligraphy_36);
-			if (chooseToContinue(hardlineSounds)) {
+			if (chooseToContinue()) {
 				// Restore game to default (bring user to starting screen)
 				gameOver = false;
 				rest(100);
 				displayInstructions();
-				displayLevelSelectionScreen(letter_gothic_28, letter_gothic_24, cursor);
+				displayDifficultySelectionScreen(letter_gothic_28, letter_gothic_24, cursor);
 				restartGame(player, cursor, target);
 				continue;
 			}

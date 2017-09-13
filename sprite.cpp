@@ -125,7 +125,7 @@ double Sprite::CenterY() {
 }
 
 void Sprite::IncreaseSpeed() {
-	_velX += 1.0;
+	_velX += 0.5;
 }
 
 int Sprite::getAlive() {

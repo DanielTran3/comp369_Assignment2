@@ -29,7 +29,7 @@ class Sprite {
 		Sprite();
 		~Sprite();
 		
-		int Load(char *filename);
+		int Load(const char *filename);
 		void Draw(BITMAP *dest);
 		void DrawFrame(BITMAP *dest);
 		void UpdatePosition();

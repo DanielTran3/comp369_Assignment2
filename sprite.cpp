@@ -38,7 +38,7 @@ Sprite::~Sprite() {
 	}
 }
 
-int Sprite::Load(char *filename) {
+int Sprite::Load(const char *filename) {
 	_image = load_bitmap(filename, NULL);
 	if (_image == NULL) {
 		return 0;

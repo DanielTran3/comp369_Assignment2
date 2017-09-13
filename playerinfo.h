@@ -1,6 +1,7 @@
 #ifndef _PLAYERINFO_H
 
 #include "sprite.h"
+#include "sound.h"
 #include "allegro.h"
 
 #define WIDTH 640
@@ -21,7 +22,7 @@ class PlayerInfo {
 		~PlayerInfo();
 		
 		void IncreaseLevel(Sprite *playerCursor);
-		void IncreaseScore(Sprite *playerCursor);
+		void IncreaseScore(Sprite *playerCursor, Sound *sounds);
 		void setDifficulty(int difficulty, Sprite *playerCursor);
 		
 		int getLevel();

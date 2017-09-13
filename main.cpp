@@ -103,15 +103,15 @@ void displayInstructions() {
 	draw_pretty_box("If you miss or the cursor passes the target, you lose the game!", 70, yOffset, 10, 30, 21);	
 	textout_centre_ex(screen, font, "Instructions", xOffset, yOffset, WHITE, 0);
 	textout_centre_ex(screen, font, "Select the options on the following screens", xOffset, yOffset + 2 * LINE_SPACING, WHITE, 0);
-	textout_centre_ex(screen, font, "by pressing the colored keys on the screen.", xOffset, yOffset + 3 * LINE_SPACING, WHITE, 0);
+	textout_centre_ex(screen, font, "by pressing the specified keys on the screen.", xOffset, yOffset + 3 * LINE_SPACING, WHITE, 0);
 	
 	textout_centre_ex(screen, font, "A cursor moves on the screen and your goal is", xOffset, yOffset + 5 * LINE_SPACING, WHITE, 0);
 	textout_centre_ex(screen, font, "to press SPACE when the cursor touches the target!", xOffset, yOffset + 6 * LINE_SPACING, WHITE, 0);
 	
-	textout_centre_ex(screen, font, "There are 5 levels in total. Everytime you hit the", xOffset, yOffset + 8 * LINE_SPACING, WHITE, 0);
-	textout_centre_ex(screen, font, "the target, your score increases and the cursor", xOffset, yOffset + 9 * LINE_SPACING, WHITE, 0);
+	textout_centre_ex(screen, font, "Everytime you hit the target, ", xOffset, yOffset + 8 * LINE_SPACING, WHITE, 0);
+	textout_centre_ex(screen, font, "your score increases and the cursor", xOffset, yOffset + 9 * LINE_SPACING, WHITE, 0);
 	textout_centre_ex(screen, font, "will move in the opposite direction.", xOffset, yOffset + 10 * LINE_SPACING, WHITE, 0);
-	textout_centre_ex(screen, font, "Every 5 times the target is hit, the cursor will speed up!", xOffset, yOffset + 11 * LINE_SPACING, WHITE, 0);
+	textout_centre_ex(screen, font, "Every 5 target hits will increase the speed of the cursor!", xOffset, yOffset + 11 * LINE_SPACING, WHITE, 0);
 	textout_centre_ex(screen, font, "If you miss or the cursor passes the target, you lose the game!", xOffset, yOffset + 12 * LINE_SPACING, WHITE, 0);
 		
 	textout_centre_ex(screen, font, "That's all there is to this game! Enjoy!", xOffset, yOffset + 14 * LINE_SPACING, WHITE, 0);
@@ -148,22 +148,35 @@ void displayLevelSelectionScreen(FONT *headerFont, FONT *selectionFont, Sprite *
 	}
 }
 
-void displayGameOverScreen(PlayerInfo *player, FONT *gameOverFont, FONT *gameOverSubFont) {
-	FONT *lucida_calligraphy_36 = load_font("fonts/lucida_calligraphy_36.pcx", NULL, NULL);
-	if (!lucida_calligraphy_36) {
-		allegro_message("Cannot find Lucida Calligraphy Font\n");
+void displayHelpScreen(FONT *helpTitle, FONT *helpFont) {
+	int xOffset = WIDTH / 2;
+	
+	drawImage(HELP_SCREEN);
+	textprintf_centre_ex(screen, helpTitle, xOffset, 10, WHITE, -1, "Help");
+	textprintf_centre_ex(screen, helpFont, xOffset, HEIGHT / 2 + 12 * LINE_SPACING, WHITE, -1, "Press SPACE at the correct time to increase your score!");
+	textprintf_centre_ex(screen, helpFont, xOffset, HEIGHT / 2 + 16 * LINE_SPACING, WHITE, -1, "Press ENTER to exit the help screen");
+	textprintf_centre_ex(screen, helpFont, xOffset, HEIGHT / 2 + 18 * LINE_SPACING, WHITE, -1, "OR SPACE to display the instructions");
+
+	while(1) {
+		if (key[KEY_ENTER]) {
+			break;
+		}
+		if (key[KEY_SPACE]) {
+			displayInstructions();
+		}
 	}
-	else {
-		drawImage(GAMEOVER_BACKGROUND);
-	    int xOffset = WIDTH / 2;
-	    int yOffset = HEIGHT / 4 + 50;
-	    //rectfill(screen, 0, 0, WIDTH, HEIGHT, BLACK);
-	    draw_pretty_box("Press Enter To Retry or ESC to Exit", xOffset / 2 + 20, yOffset, 30, 30, 12);
-	    textprintf_centre_ex(screen, lucida_calligraphy_36, xOffset, yOffset - 20, WHITE, -1, "Game Over");
-	    textprintf_centre_ex(screen, font, xOffset, yOffset + 5 * LINE_SPACING, WHITE, -1, "Your Score:    %i", player->getScore());
-	    textprintf_centre_ex(screen, font, xOffset, yOffset + 6.5 * LINE_SPACING, WHITE, -1, "Highest Score: %i", player->getHighestScore());
-	    textprintf_centre_ex(screen, font, xOffset, yOffset + 11 * LINE_SPACING, WHITE, -1, "Press Enter To Retry or ESC to Exit");
-	}
+}
+
+void displayGameOverScreen(PlayerInfo *player, FONT *gameOverFont) {
+	drawImage(GAMEOVER_BACKGROUND);
+    int xOffset = WIDTH / 2;
+    int yOffset = HEIGHT / 4 + 50;
+    //rectfill(screen, 0, 0, WIDTH, HEIGHT, BLACK);
+    draw_pretty_box("Press Enter To Retry or ESC to Exit", xOffset / 2 + 20, yOffset, 30, 30, 12);
+    textprintf_centre_ex(screen, gameOverFont, xOffset, yOffset - 20, WHITE, -1, "Game Over");
+    textprintf_centre_ex(screen, font, xOffset, yOffset + 5 * LINE_SPACING, WHITE, -1, "Your Score:    %i", player->getScore());
+    textprintf_centre_ex(screen, font, xOffset, yOffset + 6.5 * LINE_SPACING, WHITE, -1, "Highest Score: %i", player->getHighestScore());
+    textprintf_centre_ex(screen, font, xOffset, yOffset + 11 * LINE_SPACING, WHITE, -1, "Press Enter To Retry or ESC to Exit");
 }
 
 /*
@@ -173,7 +186,8 @@ void displayUserInformation(PlayerInfo *player, BITMAP *buffer) {
 	int xOffset = WIDTH / 2;
 	int yOffset = 5;
 	rectfill(buffer, 0, 0, WIDTH, yOffset + 10, BLACK);
-	textprintf_centre_ex(buffer, font, xOffset, yOffset, WHITE, 0, "Level: %i | Score: %i", player->getLevel(), player->getScore());
+	textprintf_centre_ex(buffer, font, xOffset, yOffset, WHITE, 0, "Level: %i | Score: %i | High Score: %i", 
+						 player->getLevel(), player->getScore(), player->getHighestScore());
 	hline(buffer, 0, yOffset + 10, WIDTH, WHITE);
 }
 
@@ -255,7 +269,7 @@ bool hitTheTarget(Sprite *cursor, Sprite *target) {
 	}
 }
 
-void relocateTarget(Sprite *cursor, Sprite *target, PlayerInfo *player) {
+void relocateTarget(Sprite *cursor, Sprite *target) {
 	// Subtract half the target width and a small factor so the target doesn't appear on the end of the line,
 	// Since the detection for losing the game is based on the right/left edge of the target
 	int randomLocation = (WIDTH - lineLength + target->getWidth()) / 2 + rand() % (lineLength - 2 * target->getWidth());
@@ -269,7 +283,6 @@ void relocateTarget(Sprite *cursor, Sprite *target, PlayerInfo *player) {
 	target->setX(randomLocation);
 	
 	cursor->ChangeDirection();
-	player->IncreaseScore(cursor);
 
 	setTargetSides(cursor, target);
 }
@@ -322,7 +335,7 @@ BITMAP *grabframe(BITMAP *source,
 
 Sprite *createMascotAnimSprite() {
 	Sprite *tempSprite = new Sprite();
-	int ret = tempSprite->Load("sprites/Sonic.bmp");
+	int ret = tempSprite->Load(SONIC);
     if (!ret) {
     	allegro_message("Error loading mascot sprite sheet.");
     	return NULL;
@@ -379,9 +392,18 @@ void restartGame(PlayerInfo *player, Sprite *cursor, Sprite *target) {
 	player->ResetLeveled();
 }
 
+void helpMenu(Sound *sounds, FONT *helpTitle, FONT *helpFont) {
+	if ((key[KEY_LCONTROL] && key[KEY_H]) ||
+		(key[KEY_RCONTROL] && key[KEY_H])) { 
+		sounds->setSoundEffect(PAUSE_SFX);
+		sounds->playSoundEffect();
+		displayHelpScreen(helpTitle, helpFont);
+	}
+}
+
 int main(void) {
 	allegro_init();
-	set_color_depth(16);
+	set_color_depth(24);
 	install_keyboard();
 	install_int(timer1, 1000);
 	srand(time(NULL));
@@ -401,23 +423,25 @@ int main(void) {
 	FONT *letter_gothic_28 = load_font("fonts/Letter_Gothic_Std_28.pcx", NULL, NULL);
 	FONT *letter_gothic_24 = load_font("fonts/Letter_Gothic_Std_24.pcx", NULL, NULL);
 	FONT *letter_gothic_12 = load_font("fonts/Letter_Gothic_Std_12.pcx", NULL, NULL);
-	if (!letter_gothic_48 || !letter_gothic_24 || !letter_gothic_12) {
-		allegro_message("Cannot find fonts/title_font.pcx file\n");
+	FONT *lucida_calligraphy_36 = load_font("fonts/lucida_calligraphy_36.pcx", NULL, NULL);
+	if (!letter_gothic_48 || !letter_gothic_24 || !letter_gothic_12 || !lucida_calligraphy_36) {
+		allegro_message("Cannot find one or more font files");
 		return 1;
 	}
 	// Incorrect
 	ticks++;
 	rest(5);
 	
+	Sound *hardlineSounds = new Sound();
+	
 	displayTitleScreen(letter_gothic_48, letter_gothic_24);
 	displayInstructions();
 	PlayerInfo *player = new PlayerInfo();
 	SpriteHandler *spriteContainer = new SpriteHandler();
-	Sound *hardlineSounds = new Sound();
 	Sprite *cursor = new Sprite();
 	Sprite *target = new Sprite();
-	cursor->Load("sprites/cursor.bmp");
-	target->Load("sprites/target.bmp");
+	cursor->Load(CURSOR);
+	target->Load(TARGET);
 	displayLevelSelectionScreen(letter_gothic_28, letter_gothic_24, cursor);
 	cursor->setX((WIDTH - lineLength) / 2);
 	cursor->setY(HEIGHT / 2);            
@@ -438,6 +462,7 @@ int main(void) {
 	}
 
 	while (!key[KEY_ESC]) {
+		helpMenu(hardlineSounds, lucida_calligraphy_36, letter_gothic_12);
 		cursor->UpdatePosition();
 		checkCursorOnBoundary(cursor);
 		checkIfCursorPassesTarget(cursor, target);
@@ -447,14 +472,18 @@ int main(void) {
 				// when the space key is pressed.
 				clear_keybuf();
 				if (hitTheTarget(cursor, target)) {
-					relocateTarget(cursor, target, player);
+					player->IncreaseScore(cursor, hardlineSounds);
+					relocateTarget(cursor, target);
 				}
 			}
 		}
 		blit(background_image, buffer, 0, 0, 0, 0, WIDTH, HEIGHT);
 		animateMascot(buffer, spriteContainer->Get(2), player, letter_gothic_24);
 		displayUserInformation(player, buffer);
-		hline(buffer, (WIDTH - lineLength) / 2, HEIGHT / 2, (WIDTH + lineLength) / 2, WHITE);
+		hline(buffer, (WIDTH - lineLength) / 2, HEIGHT / 2 - 1, (WIDTH + lineLength) / 2, BLACK);
+		hline(buffer, (WIDTH - lineLength) / 2, HEIGHT / 2, (WIDTH + lineLength) / 2, BLACK);
+		hline(buffer, (WIDTH - lineLength) / 2, HEIGHT / 2 + 1, (WIDTH + lineLength) / 2, BLACK);
+		
 		draw_sprite(buffer, target->getImage(), target->getX(), target->getY());
 		
 		draw_sprite(buffer, cursor->getImage(), cursor->getX(), cursor->getY());
@@ -466,7 +495,9 @@ int main(void) {
 		// ADD HELP MENU FUNCTION HERE
 		hardlineSounds->PollTurnOnOrOffMusic();
 		if (gameOver) {
-			displayGameOverScreen(player, letter_gothic_24, letter_gothic_12);
+			hardlineSounds->setSoundEffect(GAMEOVER_SFX);
+			hardlineSounds->playSoundEffect();
+			displayGameOverScreen(player, lucida_calligraphy_36);
 			if (chooseToContinue(hardlineSounds)) {
 				// Restore game to default (bring user to starting screen)
 				gameOver = false;

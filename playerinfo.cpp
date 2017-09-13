@@ -22,13 +22,17 @@ void PlayerInfo::IncreaseLevel(Sprite *cursor) {
 	}
 	_hasLeveled = true;
 }
-void PlayerInfo::IncreaseScore(Sprite *cursor) {
+void PlayerInfo::IncreaseScore(Sprite *cursor, Sound *sounds) {
 	_score++;
+	sounds->setSoundEffect(HIT_SFX);
+	sounds->playSoundEffect();
 	_numHits++;
 	if (_score > _highestScore) {
 		_highestScore = _score;
 	}
 	if (_numHits >= HITSBEFORELEVELUP) {
+		sounds->setSoundEffect(LEVELUP_SFX);
+		sounds->playSoundEffect();
 		IncreaseLevel(cursor);
 		_numHits = 0;
 	}

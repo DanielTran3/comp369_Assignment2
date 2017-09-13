@@ -8,14 +8,15 @@ Sound::Sound() {
 	_volume = 128;
 	
 	// Load the background music and play it on start
-	_bgm = load_sample(BGM);
+	_bgm = load_sample(HARDLINE_BGM);
 	if (!_bgm) {
 		allegro_message("Error Loading Background Music");
 	}
 	playMusic();
 	
 	// Load up a sounds for _soundEffect
-	_soundEffect = load_sample(CORRECT_SOUND);
+	_soundEffectTitle = HIT_SFX;
+	_soundEffect = load_sample(HIT_SFX);
 	if (!_soundEffect) {
 		allegro_message("Error Loading Correct Sound Effect");
 	}
@@ -30,48 +31,6 @@ Sound::~Sound() {
 // Getters and setters for the Sound properties
 void Sound::setPanning(int panning) {
 	_panning = panning;
-}
-
-int Sound::getPanning() {
-	return _panning;
-}
-
-void Sound::setPitch(int pitch) {
-	_pitch = pitch;
-}
-
-int Sound::getPitch() {
-	return _pitch;
-}
-
-void Sound::setVolume(int volume) {
-	_volume = volume;	
-}
-
-int Sound::getVolume() {
-	return _volume;
-}
-
-void Sound::setBGM(const char *bgmName) {
-	_bgm = load_sample(bgmName);
-	if (!_bgm) {
-		allegro_message("Error Loading Music");
-	}
-}
-
-SAMPLE *Sound::getBGM() {
-	return _bgm;
-}
-
-void Sound::setSoundEffect(const char *soundEffectName) {
-	_soundEffect = load_sample(soundEffectName);
-	if (!_soundEffect) {
-		allegro_message("Error Loading Sound Effect");
-	}
-}
-
-SAMPLE *Sound::getSoundEffect() {
-	return _soundEffect;
 }
 
 // Play the background music
@@ -112,5 +71,49 @@ void Sound::PollTurnOnOrOffMusic() {
 		updateSound(_bgm);
 		rest(10);
 	}
+}
+
+int Sound::getPanning() {
+	return _panning;
+}
+
+void Sound::setPitch(int pitch) {
+	_pitch = pitch;
+}
+
+int Sound::getPitch() {
+	return _pitch;
+}
+
+void Sound::setVolume(int volume) {
+	_volume = volume;	
+}
+
+int Sound::getVolume() {
+	return _volume;
+}
+
+void Sound::setBGM(const char *bgmName) {
+	_bgm = load_sample(bgmName);
+	if (!_bgm) {
+		allegro_message("Error Loading Music");
+	}
+}
+
+SAMPLE *Sound::getBGM() {
+	return _bgm;
+}
+
+void Sound::setSoundEffect(const char *soundEffectName) {
+	if (_soundEffectTitle.c_str() != soundEffectName) {
+		_soundEffect = load_sample(soundEffectName);
+		if (!_soundEffect) {
+			allegro_message("Error Loading Sound Effect");
+		}	
+	}
+}
+
+SAMPLE *Sound::getSoundEffect() {
+	return _soundEffect;
 }
 

@@ -1,9 +1,12 @@
 #ifndef _SOUND_H
 #include <allegro.h>
+#include <string>
 
-#define BGM "sounds/pocketTrivia_BGM.wav"
-#define CORRECT_SOUND "sounds/pocketTrivia_Correct.wav"
-#define INCORRECT_SOUND "sounds/pocketTrivia_Incorrect.wav"
+#define HARDLINE_BGM "sounds/hardline_bgm.wav"
+#define HIT_SFX "sounds/hit_sfx.wav"
+#define LEVELUP_SFX "sounds/levelup_sfx.wav"
+#define PAUSE_SFX "sounds/pause_sfx.wav"
+#define GAMEOVER_SFX "sounds/gameover_sfx.wav"
 
 class Sound {
 	private:
@@ -12,9 +15,22 @@ class Sound {
 		int _volume;
 		SAMPLE *_bgm;
 		SAMPLE *_soundEffect;
+		std::string _soundEffectTitle;
+		
 	public:
 		Sound();
 		~Sound();
+		
+		void playMusic();
+		void stopMusic();
+		
+		void playSoundEffect();
+		void stopSoundEffect();
+
+		void updateSound(SAMPLE *sound);
+		void updateAllSounds();
+		
+		void PollTurnOnOrOffMusic();
 		
 		void setPanning(int panning);
 		int getPanning();
@@ -30,17 +46,6 @@ class Sound {
 		
 		void setSoundEffect(const char *soundEffectName);
 		SAMPLE *getSoundEffect();
-
-		void playMusic();
-		void stopMusic();
-		
-		void playSoundEffect();
-		void stopSoundEffect();
-
-		void updateSound(SAMPLE *sound);
-		void updateAllSounds();
-		
-		void PollTurnOnOrOffMusic();
 };
 
 #endif

@@ -64,6 +64,8 @@ void Sound::updateAllSounds() {
 	adjust_sample(_soundEffect, _volume, _panning, _pitch, FALSE);
 }
 
+// Poll the CTRL + M Key combination to turn off the music (set the volume to 0)
+// or turn on the music (set the volume to 128)
 void Sound::PollTurnOnOrOffMusic() {
 	if ((key[KEY_LCONTROL] && key[KEY_M]) || 
 		(key[KEY_RCONTROL] && key[KEY_M])) {
@@ -73,6 +75,8 @@ void Sound::PollTurnOnOrOffMusic() {
 		clear_keybuf();
 	}
 }
+
+// Getters and Setters
 
 int Sound::getPanning() {
 	return _panning;
@@ -106,6 +110,7 @@ SAMPLE *Sound::getBGM() {
 }
 
 void Sound::setSoundEffect(const char *soundEffectName) {
+	// If the sound is already loaded, then do not load it again
 	if (_soundEffectTitle.c_str() != soundEffectName) {
 		_soundEffect = load_sample(soundEffectName);
 		if (!_soundEffect) {

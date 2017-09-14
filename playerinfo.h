@@ -14,14 +14,13 @@ class PlayerInfo {
 		int _score;
 		int _highestScore;
 		int _highestLevel;
-		int _difficulty;
 		int _numHits;
 		bool _hasLeveled;
 	public:
 		PlayerInfo();
 		~PlayerInfo();
 		
-		void IncreaseLevel(Sprite *playerCursor);
+		void IncreaseLevel(Sprite *playerCursor, Sound * sounds);
 		void IncreaseScore(Sprite *playerCursor, Sound *sounds);
 		void setDifficulty(int difficulty, Sprite *playerCursor);
 		
@@ -33,8 +32,6 @@ class PlayerInfo {
 		void setHighestScore(int highestScore);
 		int getHighestLevel();
 		void setHighestLevel(int highestLevel);
-		int getDifficulty();
-		void setDifficulty(int difficulty);
 		int getNumHits();
 		void setNumHits(int numHits);
 		bool HasLeveled();

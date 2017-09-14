@@ -1,19 +1,10 @@
 #include <stdio.h>
 #include "assignment2.h"
 
-volatile int ticks;
-volatile int framerate;
 bool gameOver;
 int lineLength = 200;
 BITMAP *mascotFrames[MASCOTFRAMES];
 Sound *hardlineSounds;
-//calculate framerate every second
-void timer1(void)
-{
-    framerate = ticks;
-    ticks=0;
-}
-END_OF_FUNCTION(timer1);
 
 /*
 	Draws a fullscreen image given the filename input. Generally used to display a background image
@@ -206,11 +197,13 @@ void displayGameOverScreen(PlayerInfo *player, FONT *gameOverFont) {
     int xOffset = WIDTH / 2;
     int yOffset = HEIGHT / 4 + 50;
 
-    draw_pretty_box("Press Enter To Retry or ESC to Exit", xOffset / 2 + 20, yOffset, 30, 30, 12);
+    draw_pretty_box("Press Enter To Retry or ESC to Exit", xOffset / 2 + 20, yOffset, 30, 30, 14);
     textprintf_centre_ex(screen, gameOverFont, xOffset, yOffset - 20, WHITE, -1, "Game Over");
     textprintf_centre_ex(screen, font, xOffset, yOffset + 5 * LINE_SPACING, WHITE, -1, "Your Score:    %i", player->getScore());
     textprintf_centre_ex(screen, font, xOffset, yOffset + 6.5 * LINE_SPACING, WHITE, -1, "Highest Score: %i", player->getHighestScore());
-    textprintf_centre_ex(screen, font, xOffset, yOffset + 11 * LINE_SPACING, WHITE, -1, "Press Enter To Retry or ESC to Exit");
+    textprintf_centre_ex(screen, font, xOffset, yOffset + 9 * LINE_SPACING, WHITE, -1, "Your Level:    %i", player->getLevel());
+    textprintf_centre_ex(screen, font, xOffset, yOffset + 10.5 * LINE_SPACING, WHITE, -1, "Highest Level: %i", player->getHighestLevel());
+	textprintf_centre_ex(screen, font, xOffset, yOffset + 13 * LINE_SPACING, WHITE, -1, "Press Enter To Retry or ESC to Exit");
 }
 
 /*
@@ -220,8 +213,10 @@ void displayUserInformation(PlayerInfo *player, BITMAP *buffer) {
 	int xOffset = WIDTH / 2;
 	int yOffset = 5;
 	rectfill(buffer, 0, 0, WIDTH, yOffset + 10, BLACK);
-	textprintf_centre_ex(buffer, font, xOffset, yOffset, WHITE, 0, "Level: %i | Score: %i | High Score: %i", 
-						 player->getLevel(), player->getScore(), player->getHighestScore());
+	textprintf_ex(buffer, font, 10, yOffset, WHITE, 0, "Level: %i | Highest Level: %i", 
+						 player->getLevel(), player->getHighestLevel());
+	textprintf_ex(buffer, font, WIDTH - 210, yOffset, WHITE, 0, "Score: %i | High Score: %i", 
+						 player->getScore(), player->getHighestScore());
 	hline(buffer, 0, yOffset + 10, WIDTH, WHITE);
 }
 
@@ -237,7 +232,6 @@ int getHorizontalSpacing(const char *text) {
 */
 void draw_pretty_box(const char * textToMeasure, int x, int y, int offset_x, int offset_y, int numLines) {
 	int textLength = getHorizontalSpacing(textToMeasure) * CHARACTER_WIDTH;
-	printf("textLength: %i\n", textLength);
 	rectfill(screen, x - offset_x, y - offset_y, x + textLength + offset_x, y + (numLines * LINE_SPACING) + offset_y, BLACK);
 	rect(screen, x - offset_x, y - offset_y, x + textLength + offset_x, y + (numLines * LINE_SPACING) + offset_y, WHITE);
 }
@@ -476,6 +470,9 @@ void restartGame(PlayerInfo *player, Sprite *cursor, Sprite *target) {
 	player->ResetLeveled();
 }
 
+/*
+	Checks for CTRL + H key combination to play the pause sound and display the help screen
+*/
 void helpMenu(FONT *helpTitle, FONT *helpFont) {
 	if ((key[KEY_LCONTROL] && key[KEY_H]) ||
 		(key[KEY_RCONTROL] && key[KEY_H])) { 
@@ -486,23 +483,24 @@ void helpMenu(FONT *helpTitle, FONT *helpFont) {
 }
 
 int main(void) {
+	// Initialize Allegro, keyboard, screen, and sounds
 	allegro_init();
 	set_color_depth(24);
 	install_keyboard();
-	install_int(timer1, 1000);
-	srand(time(NULL));
 	
 	if (install_sound(DIGI_AUTODETECT, MIDI_NONE, "") != 0) {
 		allegro_message("Error Initializing Sound System");
 		return 1;
 	}
+	hardlineSounds = new Sound();
 	
 	int ret = set_gfx_mode(MODE_W, WIDTH, HEIGHT, 0, 0);
 	if (ret != 0) {
 		allegro_message("Error setting up screen!");
 		return 1;
 	}
-	hardlineSounds = new Sound();
+	
+	// Initialize fonts to be used in the game
 	FONT *letter_gothic_48 = load_font("fonts/Letter_Gothic_Std_48.pcx", NULL, NULL);
 	FONT *letter_gothic_28 = load_font("fonts/Letter_Gothic_Std_28.pcx", NULL, NULL);
 	FONT *letter_gothic_24 = load_font("fonts/Letter_Gothic_Std_24.pcx", NULL, NULL);
@@ -512,71 +510,97 @@ int main(void) {
 		allegro_message("Cannot find one or more font files");
 		return 1;
 	}
-	// Incorrect
-	ticks++;
-	rest(5);
 	
+	// Display title screen
 	displayTitleScreen(letter_gothic_48, letter_gothic_24);
+	// Display Instructions screen
 	displayInstructions();
+	
+	// Initialize player settings, cursor, target, and mascot frames
 	PlayerInfo *player = new PlayerInfo();
+	Sprite *mascot = createMascotAnimSprite();
 	Sprite *cursor = new Sprite();
 	Sprite *target = new Sprite();
 	cursor->Load(CURSOR);
 	target->Load(TARGET);
+	// Display difficulty screen that allows the user to select their difficulty
 	displayDifficultySelectionScreen(letter_gothic_28, letter_gothic_24, cursor);
+	// Initialize the cursor at the left side of the line, offset by 2 times its width
 	cursor->setX((WIDTH - lineLength) / 2);
-	cursor->setY(HEIGHT / 2);            
+	cursor->setY(HEIGHT / 2);
+	// Initialize the target to the right side of the line, offset by 2 times its width
 	target->setX((WIDTH + lineLength) / 2 - 2 * target->getWidth());
 	target->setY(HEIGHT / 2  - target->getHeight() / 2);
 	setTargetSides(cursor, target);
+	
+	// Create the double buffer
 	BITMAP *buffer;
 	buffer = create_bitmap(WIDTH, HEIGHT);
 	
-	Sprite *mascot = createMascotAnimSprite();
-	
+	// Load the background image to be used in the game
 	BITMAP *background_image;
 	background_image = load_bitmap(BACKGROUND, NULL);
 	if (!background_image) {
 		allegro_message("Error Loading %s", BACKGROUND);
 	}
 
+	// Game loop.
 	while (!key[KEY_ESC]) {
+		// Check if the user wants to display the help menu or pause the music
 		helpMenu(lucida_calligraphy_36, letter_gothic_12);
+		hardlineSounds->PollTurnOnOrOffMusic();
+		
+		// Update the position of the cursor and check the cursors position in respect
+		// to the end of the lines and to the target
 		cursor->UpdatePosition();
 		checkCursorOnBoundary(cursor);
 		checkIfCursorPassesTarget(cursor, target);
+		
+		// Check if the user presses SPACE to hit the target.
 		if (keypressed()) {
 			if(key[KEY_SPACE]) {
 				// Stop the if hitTheTarget function from triggering multiple times
 				// when the space key is pressed.
 				clear_keybuf();
+				// If the player's cursor hits the target, then increrase the player's score
+				// and move the target to a random location
 				if (hitTheTarget(cursor, target)) {
 					player->IncreaseScore(cursor, hardlineSounds);
 					relocateTarget(cursor, target);
 				}
 			}
 		}
+		
+		// Draw the background, to the double buffer
 		blit(background_image, buffer, 0, 0, 0, 0, WIDTH, HEIGHT);
-		animateMascot(buffer, mascot, player, letter_gothic_24);
+		// Draw the user's stats
 		displayUserInformation(player, buffer);
+		// If the user has just leveled up, draw the mascot
+		animateMascot(buffer, mascot, player, letter_gothic_24);
+		// Draw a thick black line that the target is on and the cursor runs across, onto the double buffer
 		hline(buffer, (WIDTH - lineLength) / 2, HEIGHT / 2 - 1, (WIDTH + lineLength) / 2, BLACK);
 		hline(buffer, (WIDTH - lineLength) / 2, HEIGHT / 2, (WIDTH + lineLength) / 2, BLACK);
 		hline(buffer, (WIDTH - lineLength) / 2, HEIGHT / 2 + 1, (WIDTH + lineLength) / 2, BLACK);
 		
+		// Draw the cursor and the buffer onto the double buffer
 		draw_sprite(buffer, target->getImage(), target->getX(), target->getY());
-		
 		draw_sprite(buffer, cursor->getImage(), cursor->getX(), cursor->getY());
-		//textprintf_ex(buffer, font, 0, 0, WHITE, -1, "Frames: %i", framerate);
+
+		// Draw the double buffer onto the screen
 		acquire_screen();
 		blit(buffer, screen, 0, 0, 0, 0, WIDTH - 1, HEIGHT - 1);
 		release_screen();
 		
-		// ADD HELP MENU FUNCTION HERE
-		hardlineSounds->PollTurnOnOrOffMusic();
+		// Check if the user has lost the game.
 		if (gameOver) {
+			// Play the Game Over sound effect
 			hardlineSounds->setSoundEffect(GAMEOVER_SFX);
 			hardlineSounds->playSoundEffect();
+			
+			// Display the Game Over screen
 			displayGameOverScreen(player, lucida_calligraphy_36);
+			
+			// Give the player the opportunity to restart the game or quit it.
 			if (chooseToContinue()) {
 				// Restore game to default (bring user to starting screen)
 				gameOver = false;
@@ -592,12 +616,17 @@ int main(void) {
 		}
 	}
 	
+	// Clean up objects
 	for (int f = 0; f < MASCOTFRAMES; f++) {
 		destroy_bitmap(mascotFrames[f]);
 	}
-        
     destroy_bitmap(background_image);
+    destroy_bitmap(buffer);
 	delete hardlineSounds;
+	delete cursor;
+	delete target;
+	delete mascot;
+	
 	allegro_exit();
 	return 0;
 }
